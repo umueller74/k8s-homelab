@@ -1,0 +1,26 @@
+# clusters/production/infrastructure/metallb-config.yaml
+# IP pool for LoadBalancer services
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: production-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 10.98.0.200-10.98.0.254 # Range of IPs to assign to Services
+  autoAssign: true
+---
+# BGP advertisement configuration
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  name: production-bgp
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - production-pool
+  # Advertise individual service IPs; use a lower value such as 24 to aggregate a larger pool
+  aggregationLength: 32
+  # Communities to tag routes with (optional)
+  communities:
+    - 65000:100 # Custom community tag
