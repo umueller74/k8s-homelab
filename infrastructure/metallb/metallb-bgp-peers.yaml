@@ -1,0 +1,39 @@
+# clusters/production/infrastructure/metallb-bgp-peers.yaml
+# BFD profile for faster failure detection
+apiVersion: metallb.io/v1beta1
+kind: BFDProfile
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  receiveInterval: 300
+  transmitInterval: 300
+  detectMultiplier: 3
+---
+# Primary router peer
+apiVersion: metallb.io/v1beta2
+kind: BGPPeer
+metadata:
+  name: router-primary
+  namespace: metallb-system
+spec:
+  myASN: 65001 # Your Kubernetes cluster AS number
+  peerASN: 65000 # Your router's AS number
+  peerAddress: 192.168.1.1 # Router IP
+  keepaliveTime: 30s
+  holdTime: 90s
+  # Enable BFD for faster failure detection (optional)
+  bfdProfile: default
+---
+# Secondary router peer (for redundancy)
+apiVersion: metallb.io/v1beta2
+kind: BGPPeer
+metadata:
+  name: router-secondary
+  namespace: metallb-system
+spec:
+  myASN: 65001
+  peerASN: 65000
+  peerAddress: 192.168.1.2 # Secondary router IP
+  keepaliveTime: 30s
+  holdTime: 90s
