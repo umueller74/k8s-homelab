@@ -1,4 +1,4 @@
-# clusters/my-cluster/storage/longhorn-config/recurring-jobs.yaml
+# clusters/homelab/storage/longhorn-config/recurring-jobs.yaml
 apiVersion: longhorn.io/v1beta2
 kind: RecurringJob
 metadata:

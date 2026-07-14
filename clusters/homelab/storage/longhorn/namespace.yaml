@@ -1,4 +1,4 @@
-# clusters/my-cluster/storage/longhorn/namespace.yaml
+# clusters/homelab/storage/longhorn/namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
