@@ -1,0 +1,21 @@
+# clusters/my-cluster/storage/longhorn/storageclass.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-retain
+  annotations:
+    # Not the default storage class - the HelmRelease creates the default one
+    storageclass.kubernetes.io/is-default-class: 'false'
+parameters:
+  # Number of replicas for volumes using this class
+  numberOfReplicas: '3'
+  # Enable data locality for better performance
+  dataLocality: 'best-effort'
+  # Filesystem type
+  fsType: 'ext4'
+  # Recurring snapshot schedule (daily at midnight)
+  recurringJobSelector: '[{"name": "daily-snapshot", "isGroup": false}]'
+provisioner: driver.longhorn.io
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true

@@ -1,0 +1,32 @@
+# clusters/my-cluster/storage/longhorn-config/recurring-jobs.yaml
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: daily-snapshot
+  namespace: longhorn-system
+spec:
+  # Run daily at midnight
+  cron: '0 0 * * *'
+  task: snapshot
+  groups: []
+  # Keep the last 7 snapshots
+  retain: 7
+  concurrency: 2
+  labels:
+    type: daily
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: weekly-backup
+  namespace: longhorn-system
+spec:
+  # Run weekly on Sunday at 2 AM
+  cron: '0 2 * * 0'
+  task: backup
+  groups: []
+  # Keep the last 4 backups
+  retain: 4
+  concurrency: 1
+  labels:
+    type: weekly

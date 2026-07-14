@@ -1,0 +1,35 @@
+# clusters/my-cluster/storage/longhorn-kustomization.yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: longhorn
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./clusters/my-cluster/storage/longhorn
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: longhorn
+      namespace: longhorn-system
+  timeout: 20m
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: longhorn-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: longhorn
+  interval: 10m
+  path: ./clusters/my-cluster/storage/longhorn-config
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 10m

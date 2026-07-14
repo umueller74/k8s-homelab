@@ -1,0 +1,67 @@
+# clusters/my-cluster/storage/longhorn/helmrelease.yaml
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: longhorn
+      version: '1.11.x'
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: longhorn-system
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  timeout: 15m
+  values:
+    # Default settings for Longhorn
+    defaultSettings:
+      # Number of replicas for each volume
+      defaultReplicaCount: 3
+      # Percentage of storage that can be allocated relative to disk capacity
+      storageOverProvisioningPercentage: 200
+      # Minimum available disk capacity percentage before a disk becomes unschedulable
+      storageMinimalAvailablePercentage: 15
+      # Automatic salvage of volumes after node failure
+      autoSalvage: true
+      # Create the default disk on tagged nodes only
+      createDefaultDiskLabeledNodes: false
+      # Default data path on the host
+      defaultDataPath: /var/lib/longhorn/
+      # Guaranteed instance manager CPU reservation percentage
+      guaranteedInstanceManagerCPU: 12
+      # Node drain policy
+      nodeDrainPolicy: block-if-contains-last-replica
+    # Backup target configuration (S3 example)
+    # defaultBackupStore:
+    #   backupTarget: s3://longhorn-backups@us-east-1/
+    #   backupTargetCredentialSecret: longhorn-s3-secret
+    persistence:
+      # Set Longhorn as the default storage class
+      defaultClass: true
+      defaultFsType: ext4
+      defaultClassReplicaCount: 3
+      reclaimPolicy: Delete
+    # Longhorn UI configuration
+    longhornUI:
+      replicas: 2
+    # Ingress for the Longhorn UI
+    ingress:
+      enabled: false
+      # Uncomment and configure for external access
+      # host: longhorn.example.com
+      # tls: true
+      # tlsSecret: longhorn-tls
+    # Resource configuration for Longhorn components
+    longhornManager:
+      tolerations: []
+      nodeSelector: {}
+    longhornDriver:
+      tolerations: []
+      nodeSelector: {}

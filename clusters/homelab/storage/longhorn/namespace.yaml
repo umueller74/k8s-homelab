@@ -1,0 +1,9 @@
+# clusters/my-cluster/storage/longhorn/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: longhorn-system
+  labels:
+    # Longhorn uses this label for component identification
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/part-of: longhorn
