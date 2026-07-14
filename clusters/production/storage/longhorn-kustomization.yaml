@@ -1,4 +1,4 @@
-# clusters/homelab/storage/longhorn-kustomization.yaml
+# clusters/production/storage/longhorn-kustomization.yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -6,7 +6,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
-  path: ./clusters/homelab/storage/longhorn
+  path: ./clusters/production/storage/longhorn
   prune: true
   sourceRef:
     kind: GitRepository
@@ -27,7 +27,7 @@ spec:
   dependsOn:
     - name: longhorn
   interval: 10m
-  path: ./clusters/homelab/storage/longhorn-config
+  path: ./clusters/production/storage/longhorn-config
   prune: true
   sourceRef:
     kind: GitRepository

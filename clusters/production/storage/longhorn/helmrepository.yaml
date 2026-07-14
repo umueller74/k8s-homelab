@@ -1,4 +1,4 @@
-# clusters/homelab/storage/longhorn/helmrepository.yaml
+# clusters/production/storage/longhorn/helmrepository.yaml
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
