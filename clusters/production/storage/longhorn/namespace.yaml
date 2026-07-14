@@ -7,3 +7,8 @@ metadata:
     # Longhorn uses this label for component identification
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/part-of: longhorn
+
+    # Longhorn requires privileged workloads (hostPath, privileged containers)
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
