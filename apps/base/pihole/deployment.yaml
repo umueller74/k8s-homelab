@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: pihole
-          image: pihole/pihole:2026.02.1
+          image: pihole/pihole:2026.07.2
 
           env:
             - name: TZ
