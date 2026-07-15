@@ -1,0 +1,10 @@
+# middleware.yaml - Rate limiting middleware
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: apps
+spec:
+  rateLimit:
+    average: 100
+    burst: 50
