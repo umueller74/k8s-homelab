@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pihole
+  namespace: pihole
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: pihole
+
+  template:
+    metadata:
+      labels:
+        app: pihole
+
+    spec:
+      containers:
+        - name: pihole
+          image: pihole/pihole:2026.02.1
+
+          env:
+            - name: TZ
+              value: Europe/Amsterdam
+
+            - name: WEBPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secret
+                  key: password
+
+            - name: FTLCONF_LOCAL_IPV4
+              value: '192.168.3.10'
+
+          ports:
+            - name: http
+              containerPort: 80
+
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+
+          volumeMounts:
+            - name: pihole-config
+              mountPath: /etc/pihole
+
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+
+      volumes:
+        - name: pihole-config
+          persistentVolumeClaim:
+            claimName: pihole-config
