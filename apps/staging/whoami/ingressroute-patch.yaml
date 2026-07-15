@@ -6,7 +6,7 @@ metadata:
 spec:
   routes:
    - kind: Rule
-     match: Host(`whoami.homelab.muellernetz.de`)
+     match: Host(`whoami.homelab.cs-ol.de`)
      services:
         - kind: Service
           name: whoamiv1
