@@ -20,4 +20,4 @@ spec:
             - "--providers.kubernetescrd.allowCrossNamespace=true"
             - "--certificatesresolvers.myresolver.acme.storage=/data/acme.json"
             - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-            - "--certificatesresolvers.myresolver.acme.email=jakub.hajek+webinar@traefik.io"
+            - "--certificatesresolvers.myresolver.acme.email=info@cs-ol.de"
