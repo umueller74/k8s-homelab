@@ -1,10 +1,8 @@
-# clusters/production/sources/metallb-helm.yaml
-
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: metallb
   namespace: flux-system
 spec:
-  interval: 1h
+  interval: 24h
   url: https://metallb.github.io/metallb
