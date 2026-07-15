@@ -31,6 +31,12 @@ spec:
     deployment:
       replicas: 2
 
+    gateway:
+      listeners:
+        web:
+          namespacePolicy:
+            from: All
+
     # Resource limits
     resources:
       requests:
@@ -53,6 +59,10 @@ spec:
         tls:
           enabled: true
 
+    providers:
+      kubernetesGateway:
+        enabled: true
+
     # Service configuration
     service:
       type: LoadBalancer
@@ -64,7 +74,7 @@ spec:
         enabled: true
         matchRule: Host(`traefik.homelab.cs-ol.de`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
         entryPoints:
-          - websecure
+          - web
 
     # Logging configuration
     logs:
