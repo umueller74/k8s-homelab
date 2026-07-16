@@ -31,12 +31,6 @@ spec:
     deployment:
       replicas: 1
 
-    gateway:
-      listeners:
-        web:
-          namespacePolicy:
-            from: All
-
     # Resource limits
     resources:
       requests:
@@ -60,11 +54,11 @@ spec:
 #          enabled: true
 
     providers:
-      kubernetesGateway:
-        enabled: true
-
       kubernetesIngress:
         enabled: true
+
+      kubernetesGateway:
+        enabled: false
 
     # Service configuration
     service:
