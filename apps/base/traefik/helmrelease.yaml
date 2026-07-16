@@ -27,10 +27,6 @@ spec:
       retries: 3
       strategy: rollback
   values:
-    api:
-      dashboard: true
-      insecure: true
-
     # Deployment configuration
     deployment:
       replicas: 1
@@ -117,6 +113,7 @@ spec:
       - '--certificatesresolvers.letsencrypt.acme.email=info@cs-ol.de'
       - '--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json'
       - '--certificatesresolvers.letsencrypt.acme.tlschallenge=true'
+      - '--api.insecure=true'
 
     persistence:
       enabled: true
