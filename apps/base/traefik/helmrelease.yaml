@@ -29,7 +29,7 @@ spec:
   values:
     # Deployment configuration
     deployment:
-      replicas: 2
+      replicas: 1
 
     gateway:
       listeners:
