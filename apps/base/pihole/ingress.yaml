@@ -7,7 +7,7 @@ metadata:
 spec:
   ingressClassName: traefik-lb
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`pihole.homelab.cs-ol.de`)
       kind: Rule
