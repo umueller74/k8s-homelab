@@ -27,6 +27,11 @@ spec:
       retries: 3
       strategy: rollback
   values:
+    api:
+      enabled: true
+      dashboard: true
+      insecure: true
+
     # Deployment configuration
     deployment:
       replicas: 1
