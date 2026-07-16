@@ -63,6 +63,9 @@ spec:
       kubernetesGateway:
         enabled: true
 
+      kubernetesIngress:
+        enabled: true
+
     # Service configuration
     service:
       type: LoadBalancer
@@ -75,6 +78,10 @@ spec:
         matchRule: Host(`traefik.homelab.cs-ol.de`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
         entryPoints:
           - web
+
+    ingressClass:
+      enabled: true
+      isDefaultClass: true
 
     # Logging configuration
 #    logs:
@@ -91,7 +98,7 @@ spec:
         service:
           enabled: true
         serviceMonitor:
-          enabled: true
+          enabled: false
 
     # Pod disruption budget for high availability
     podDisruptionBudget:
