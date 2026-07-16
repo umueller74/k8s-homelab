@@ -30,6 +30,8 @@ spec:
     # Deployment configuration
     deployment:
       replicas: 1
+      securityContext:
+        fsGroup: 65532 # Allows the Traefik pod to write to the persistent volume
 
     # Resource limits
     resources:
@@ -78,12 +80,11 @@ spec:
       isDefaultClass: true
 
     # Logging configuration
-#    logs:
-#      general:
-#        level: INFO
-#      access:
-#        enabled: true
-#        format: json
+    log:
+      level: INFO
+    accessLog:
+      enabled: true
+      format: json
 
     # Prometheus metrics
     metrics:
