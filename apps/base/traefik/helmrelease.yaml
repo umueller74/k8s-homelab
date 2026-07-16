@@ -28,7 +28,6 @@ spec:
       strategy: rollback
   values:
     api:
-      enabled: true
       dashboard: true
       insecure: true
 
