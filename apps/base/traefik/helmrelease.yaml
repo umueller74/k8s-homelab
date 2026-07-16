@@ -56,8 +56,8 @@ spec:
         port: 8443
         exposedPort: 443
         protocol: TCP
-        tls:
-          enabled: true
+#        tls:
+#          enabled: true
 
     providers:
       kubernetesGateway:
@@ -77,12 +77,12 @@ spec:
           - web
 
     # Logging configuration
-    logs:
-      general:
-        level: INFO
-      access:
-        enabled: true
-        format: json
+#    logs:
+#      general:
+#        level: INFO
+#      access:
+#        enabled: true
+#        format: json
 
     # Prometheus metrics
     metrics:
