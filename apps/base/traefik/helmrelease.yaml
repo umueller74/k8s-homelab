@@ -113,7 +113,6 @@ spec:
       - '--certificatesresolvers.letsencrypt.acme.email=info@cs-ol.de'
       - '--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json'
       - '--certificatesresolvers.letsencrypt.acme.tlschallenge=true'
-      - '--api.insecure=true'
 
     persistence:
       enabled: true
