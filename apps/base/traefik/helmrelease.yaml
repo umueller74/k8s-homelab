@@ -73,7 +73,7 @@ spec:
         enabled: true
         matchRule: Host(`traefik.homelab.cs-ol.de`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
         entryPoints:
-          - web
+          - websecure
 
     ingressClass:
       enabled: true
