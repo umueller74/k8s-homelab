@@ -4,6 +4,7 @@ metadata:
   name: pihole-dns
   namespace: pihole
 spec:
+  externalTrafficPolicy: Local
   type: LoadBalancer
   selector:
     app: pihole
