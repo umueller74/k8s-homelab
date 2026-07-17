@@ -17,5 +17,5 @@ spec:
 #        - name: rate-limit
 #          namespace: traefik
 
-  tls:
-    certResolver: letsencrypt
+  tls: {}
+#    certResolver: letsencrypt
