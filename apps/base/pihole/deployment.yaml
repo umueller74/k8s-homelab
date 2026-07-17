@@ -36,6 +36,13 @@ spec:
             - name: FTLCONF_LOCAL_IPV4
               value: '192.168.3.10'
 
+            - name: FTLCONF_dns_listeningMode
+              value: 'all'
+              
+            - name: FTLCONF_dns_upstreams
+              value: '10.98.0.1'
+
+
           ports:
             - name: http
               containerPort: 80
