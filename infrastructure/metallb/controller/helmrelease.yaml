@@ -43,7 +43,7 @@ spec:
       logLevel: info
 
     speaker:
-      logLevel: info
+      logLevel: debug
 
       frr:
         enabled: false
