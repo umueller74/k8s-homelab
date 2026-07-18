@@ -6,6 +6,7 @@ metadata:
   namespace: pihole
 spec:
   entryPoints:
+    - web
     - websecure
   routes:
     - match: Host(`pihole.homelab.cs-ol.de`)
