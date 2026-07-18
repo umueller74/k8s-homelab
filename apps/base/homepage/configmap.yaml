@@ -43,7 +43,7 @@ data:
           cpu: true
           memory: true
           showLabel: true
-          label: "cluster"
+          label: "homelab"
         nodes:
           show: true
           cpu: true
