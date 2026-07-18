@@ -21,5 +21,5 @@ spec:
             solverName: cpanel-solver
 
             config:
-              cpanelUrl: https://cp141.sp-server.net:2083/
+              cpanelUrl: https://cp141.sp-server.net:2083
               secretRef: cert-manager/cpanel-api
