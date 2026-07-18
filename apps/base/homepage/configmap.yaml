@@ -9,11 +9,10 @@ data:
   kubernetes.yaml: |
     mode: cluster
     traefik: true
-  settings.yaml: ''
-  #settings.yaml: |
-  #  providers:
-  #    longhorn:
-  #      url: https://longhorn.my.network
+  settings.yaml: |
+    providers:
+      longhorn:
+        url: https://longhorn.homelab.cs-ol.de/
   custom.css: ''
   custom.js: ''
   bookmarks.yaml: |
