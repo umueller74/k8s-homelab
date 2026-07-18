@@ -57,10 +57,6 @@ data:
         labels: true
         # Show the nodes
         nodes: true
-        # An explicit list of nodes to show. All are shown by default if "nodes" is true
-        include:
-          - 
-          - node2
     - resources:
         backend: resources
         expanded: true
