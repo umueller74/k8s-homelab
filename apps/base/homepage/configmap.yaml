@@ -49,6 +49,19 @@ data:
           cpu: true
           memory: true
           showLabel: true
+    - longhorn:
+        # Show the expanded
+        expanded: true
+        # Shows a node representing the aggregate values
+        total: true
+        # Shows the node names as labels
+        labels: true
+        # Show the nodes
+        nodes: true
+        # An explicit list of nodes to show. All are shown by default if "nodes" is true
+        include:
+          - 
+          - node2
     - resources:
         backend: resources
         expanded: true
@@ -59,3 +72,10 @@ data:
         provider: duckduckgo
         target: _blank
   docker.yaml: ''
+  proxmox.yaml: |
+    pve:
+      url: https://192.168.1.27:8006
+      token: root@pam!homepage
+      secret: c1337400-bccc-43fe-abd9-3e73e862cc4b
+
+
