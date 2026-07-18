@@ -12,7 +12,7 @@ spec:
       services:
         - kind: Service
           name: longhorn-frontend
-          port: 8000
+          port: 80
           sticky:
             cookie:
               httpOnly: true
