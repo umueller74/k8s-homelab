@@ -10,7 +10,7 @@ spec:
 
   issuerRef:
     kind: ClusterIssuer
-    name: letsencrypt-staging
+    name: letsencrypt-production
 
   commonName: '*.homelab.cs-ol.de'
 
