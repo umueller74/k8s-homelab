@@ -1,0 +1,25 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+
+metadata:
+  name: letsencrypt-staging
+
+spec:
+  acme:
+    email: info@cs-ol.de
+
+    server: https://acme-v02.api.letsencrypt.org/directory
+
+    privateKeySecretRef:
+      name: letsencrypt-production
+
+    solvers:
+      - dns01:
+          webhook:
+            groupName: jameslakin.co.uk
+
+            solverName: cpanel-solver
+
+            config:
+              cpanelUrl: https://cp141.sp-server.net:2083/
+              secretRef: cert-manager/cpanel-api
