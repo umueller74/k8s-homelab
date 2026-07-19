@@ -20,6 +20,7 @@ data:
       longhorn:
         url: https://longhorn.homelab.cs-ol.de/
 
+    maxGroupColumns: 3
   custom.css: ''
   custom.js: ''
   bookmarks.yaml: |
