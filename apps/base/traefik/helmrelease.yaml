@@ -68,19 +68,7 @@ spec:
     # Service configuration
     service:
       type: LoadBalancer
-      annotations:
-        gethomepage.dev/href: 'https://traefik.homelab.cs-ol.de'
-        gethomepage.dev/enabled: 'true'
-        gethomepage.dev/description: Traefik``
-        gethomepage.dev/group: Infrastructure
-        gethomepage.dev/icon: traefik.png
-        gethomepage.dev/app: traefik
-        gethomepage.dev/name: Traefik
-#        gethomepage.dev/widget.type: 'pihole'
-#        gethomepage.dev/widget.url: 'https://pihole.homelab.cs-ol.de'
-        gethomepage.dev/pod-selector: ''
-        gethomepage.dev/weight: 30
-        #gethomepage.dev/instance: 'public'
+      annotations: {}
 
     # Enable the Traefik dashboard (secured)
     ingressRoute:
