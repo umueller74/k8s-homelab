@@ -15,7 +15,6 @@ spec:
         name: prometheus-community
         namespace: flux-system
   values:
-    slack_api_url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX'
     # Prometheus configuration
     prometheus:
       prometheusSpec:
