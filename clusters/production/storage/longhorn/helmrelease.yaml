@@ -31,7 +31,7 @@ spec:
       # Automatic salvage of volumes after node failure
       autoSalvage: true
       # Create the default disk on tagged nodes only
-      createDefaultDiskLabeledNodes: false
+      createDefaultDiskLabeledNodes: true
       # Default data path on the host
       defaultDataPath: /var/lib/longhorn/
       # Guaranteed instance manager CPU reservation percentage
