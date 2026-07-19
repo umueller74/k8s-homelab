@@ -10,6 +10,11 @@ data:
     mode: cluster
     traefik: true
   settings.yaml: |
+    title: Muellernetz.de Homepage
+    startUrl: http://homepage.homelab.cs-ol.de
+    theme: dark
+
+    useEqualHeights: true
     providers:
       longhorn:
         url: https://longhorn.homelab.cs-ol.de/
@@ -19,22 +24,52 @@ data:
     - Developer:
         - Github:
             - abbr: GH
-              href: https://github.com/
+              href: https://github.com/umueller74
+        - Dashboard icons:
+            - abbr: DI
+              href: https://github.com/homarr-labs/dashboard-icons/tree/main/png
+    - Websites:
+        - IONOS:
+            - abbr: IO
+              href: https://mein.ionos.de/home/products?origin=CC.NGH.DE&continue
+        - Serverprofis:
+            - abbr: SP
+              href: https://service.serverprofis.net/clientarea.php
+        - cPanel:
+            - abbr: CP
+              href: https://cp141.sp-server.net:2083/
+
+        - Mega.io:
+            - abbr: ME
+              href: https://mega.io/login
+
+    - Entertainment:
+        - YouTube:
+            - abbr: YT
+              href: https://youtube.com/
+        - Finanzfluss:
+            - abbr: FF
+              href: https://www.youtube.com/@Finanzfluss
+
+    - Kapital:
+        - Raisin:
+            - abbr: RA
+              href: https://raisin.com/de-de/dashboard
+        - Scalable Capital:
+            - abbr: SC
+              href: https://secure.scalable.capital/u/login
+        - Comdirect:
+            - abbr: CO
+              href: https://kunde.comdirect.de/lp/wt/login
+        - DKB:
+            - abbr: DB
+              href: https://banking.dkb.de/login
   services.yaml: |
     - My First Group:
         - My First Service:
             href: http://localhost/
             description: Homepage is awesome
 
-    - My Second Group:
-        - My Second Service:
-            href: http://localhost/
-            description: Homepage is the best
-
-    - My Third Group:
-        - My Third Service:
-            href: http://localhost/
-            description: Homepage is 😎
   widgets.yaml: |
     - kubernetes:
         cluster:
@@ -66,7 +101,38 @@ data:
     - search:
         provider: duckduckgo
         target: _blank
-  docker.yaml: ''
+  docker.yaml: |
+    docker-lab1:
+      host: 192.168.1.28
+      port: 2375
+
+    docker-lab2:
+      host: 192.168.1.29
+      port: 2375
+
+    docker-lab3:
+      host: 192.168.0.239
+      port: 2375
+
+    docker-raspi1:
+      host: 192.168.0.50
+      port: 2375
+
+    docker-raspi2:
+      host: 192.168.0.54
+      port: 2375
+
+    docker-mamapi:
+      host: 192.168.100.98
+      port: 2375
+
+    docker-ionos:
+      host: 10.7.0.1
+      port: 2375
+
+    docker-ionosxs:
+      host: 10.7.0.9
+      port: 2375
   proxmox.yaml: |
     pve:
       url: https://192.168.1.27:8006
