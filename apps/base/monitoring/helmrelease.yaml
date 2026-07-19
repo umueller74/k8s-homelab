@@ -62,16 +62,23 @@ spec:
                 requests:
                   storage: 5Gi
       config:
+        global:
+          resolve_timeout: 5m
         route:
-          group_by: ['alertname', 'namespace']
+          group_by: ['job']
           group_wait: 30s
           group_interval: 5m
           repeat_interval: 12h
-          receiver: slack-notifications
+          routes:
+            - match:
+                alertname: InstanceLowMemory2
+                severity: critical
+              receiver: 'null'
+            - match:
+              receiver: 'discord_webhook'
+              continue: true
         receivers:
-          - name: slack-notifications
-            slack_configs:
-              - channel: '#alerts'
-                send_resolved: true
-                title: '{{ .Status | toUpper }}: {{ .CommonLabels.alertname }}'
-                text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+          - name: 'null'
+          - name: 'discord_webhook'
+            webhook_configs:
+              - url: 'http://alertmanager-discord:9094'
