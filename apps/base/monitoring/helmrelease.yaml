@@ -61,3 +61,11 @@ spec:
     # Push gateway for batch jobs
     prometheus-pushgateway:
       enabled: false
+
+    extraScrapeConfigs: |
+      - job_name: 'talos-etcd'
+        static_configs:
+        - targets:
+          - '10.98.0.10:2381'
+          - '10.98.0.11:2381'
+          - '10.98.0.12:2381'
