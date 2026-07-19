@@ -14,12 +14,8 @@ spec:
         kind: HelmRepository
         name: prometheus-community
         namespace: flux-system
-  valuesFrom:
-    - kind: Secret
-      name: alertmanager-slack-webhook
-      valuesKey: slack_api_url
-      targetPath: alertmanager.config.global.slack_api_url
   values:
+    slack_api_url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX'
     # Prometheus configuration
     prometheus:
       prometheusSpec:
@@ -46,14 +42,14 @@ spec:
     # Grafana configuration
     grafana:
       enabled: true
-      adminPassword: 'changeme' # Override with SOPS Secret in production
+      adminPassword: 'admin' # Override with SOPS Secret in production
       persistence:
         enabled: true
         size: 10Gi
       ingress:
         enabled: true
         hosts:
-          - grafana.example.com
+          - grafana.homelab.cs-ol.de
 
     # Alertmanager configuration with Slack routing
     alertmanager:
