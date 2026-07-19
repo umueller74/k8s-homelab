@@ -3,18 +3,18 @@ kind: IngressRoute
 metadata:
   name: prometheus-ingress
   namespace: monitoring
-annotations:
-  gethomepage.dev/href: 'https://prometheus.homelab.cs-ol.de'
-  gethomepage.dev/enabled: 'true'
-  gethomepage.dev/description: Prometheus
-  gethomepage.dev/group: Monitoring
-  gethomepage.dev/icon: prometheus.png
-  gethomepage.dev/app: prometheus
-  gethomepage.dev/name: Prometheus
-  gethomepage.dev/widget.type: 'prometheus'
-  gethomepage.dev/widget.url: 'https://prometheus.homelab.cs-ol.de'
-  gethomepage.dev/pod-selector: ''
-  gethomepage.dev/weight: '10'
+  annotations:
+    gethomepage.dev/href: 'https://prometheus.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Prometheus
+    gethomepage.dev/group: Monitoring
+    gethomepage.dev/icon: prometheus.png
+    gethomepage.dev/app: prometheus
+    gethomepage.dev/name: Prometheus
+    gethomepage.dev/widget.type: 'prometheus'
+    gethomepage.dev/widget.url: 'https://prometheus.homelab.cs-ol.de'
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '10'
 spec:
   entryPoints:
     - websecure
@@ -31,22 +31,22 @@ kind: IngressRoute
 metadata:
   name: grafana-ingress
   namespace: monitoring
-annotations:
-  gethomepage.dev/href: 'https://grafana.homelab.cs-ol.de'
-  gethomepage.dev/enabled: 'true'
-  gethomepage.dev/description: Grafana
-  gethomepage.dev/group: Monitoring
-  gethomepage.dev/icon: grafana.png
-  gethomepage.dev/app: grafana
-  gethomepage.dev/name: Grafana
-  gethomepage.dev/widget.type: 'grafana'
-  gethomepage.dev/widget.url: 'https://grafana.homelab.cs-ol.de'
-  gethomepage.dev/widget.version: '2'
-  gethomepage.dev/widget.alert: 'alertmanager'
-  gethomepage.dev/widget.user: 'admin'
-  gethomepage.dev/widget.password: 'password'
-  gethomepage.dev/pod-selector: ''
-  gethomepage.dev/weight: '10'
+  annotations:
+    gethomepage.dev/href: 'https://grafana.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Grafana
+    gethomepage.dev/group: Monitoring
+    gethomepage.dev/icon: grafana.png
+    gethomepage.dev/app: grafana
+    gethomepage.dev/name: Grafana
+    gethomepage.dev/widget.type: 'grafana'
+    gethomepage.dev/widget.url: 'https://grafana.homelab.cs-ol.de'
+    gethomepage.dev/widget.version: '2'
+    gethomepage.dev/widget.alert: 'alertmanager'
+    gethomepage.dev/widget.user: 'admin'
+    gethomepage.dev/widget.password: 'password'
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '10'
 spec:
   entryPoints:
     - websecure
