@@ -15,35 +15,10 @@ data:
     theme: dark
 
     useEqualHeights: true
+    showStats: true
     providers:
       longhorn:
         url: https://longhorn.homelab.cs-ol.de/
-
-    layout:
-      Primary Services:
-        style: row
-        columns: 4
-        tab: Services
-      Code:
-        style: row
-        columns: 4
-        tab: Code
-      Tools:
-        style: row
-        columns: 4
-        tab: Tools
-      Devices:
-        style: row
-        columns: 5
-        tab: Devices
-      Monitoring:
-        style: row
-        columns: 5
-        tab: Monitoring
-      Prometheus Stack:
-        style: row
-        columns: 4
-        tab: Tools
 
   custom.css: ''
   custom.js: ''
