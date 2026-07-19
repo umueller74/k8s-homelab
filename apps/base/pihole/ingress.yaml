@@ -9,7 +9,7 @@ metadata:
     gethomepage.dev/enabled: 'true'
     gethomepage.dev/description: PiHole
     gethomepage.dev/group: Infrastructure
-    gethomepage.dev/icon: pihole.svg
+    gethomepage.dev/icon: si-pihole.png
     gethomepage.dev/app: pihole
     gethomepage.dev/name: PiHole
     gethomepage.dev/widget.type: 'pihole'
