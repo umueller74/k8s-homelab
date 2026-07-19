@@ -1,0 +1,5 @@
+# clusters/production/storage/longhorn/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubelet-serving-cert-approver
