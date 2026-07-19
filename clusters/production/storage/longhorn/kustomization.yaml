@@ -12,4 +12,4 @@ patches:
   - target:
       version: v1
       kind: Node
-    path: longhorn-node-patch.yaml
+    path: node-patch.yaml
