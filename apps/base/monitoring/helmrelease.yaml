@@ -8,13 +8,12 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: '60.x.x' # Use the specific version you need
+      version: '87.x.x' # Use the specific version you need
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
         namespace: flux-system
   values:
-    # prometheus-values.yaml
     server:
       # Persistent storage for metrics
       persistentVolume:
