@@ -1,0 +1,82 @@
+# clusters/my-cluster/monitoring/helmrelease.yaml
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: monitoring
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: '>=84.0.0 <85.0.0'
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+  valuesFrom:
+    - kind: Secret
+      name: alertmanager-slack-webhook
+      valuesKey: slack_api_url
+      targetPath: alertmanager.config.global.slack_api_url
+  values:
+    # Prometheus configuration
+    prometheus:
+      prometheusSpec:
+        # Retain 30 days of metrics
+        retention: 10d
+        retentionSize: '10GB'
+        # Persistent storage for Prometheus data
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: fast-ssd
+              accessModes: ['ReadWriteOnce']
+              resources:
+                requests:
+                  storage: 10Gi
+        # Scrape all ServiceMonitors and PodMonitors across namespaces
+        serviceMonitorSelectorNilUsesHelmValues: false
+        serviceMonitorNamespaceSelector: {}
+        podMonitorSelectorNilUsesHelmValues: false
+        podMonitorNamespaceSelector: {}
+        ruleSelectorNilUsesHelmValues: false
+        ruleNamespaceSelector: {}
+
+    # Grafana configuration
+    grafana:
+      enabled: true
+      adminPassword: 'changeme' # Override with SOPS Secret in production
+      persistence:
+        enabled: true
+        size: 10Gi
+      ingress:
+        enabled: true
+        hosts:
+          - grafana.example.com
+
+    # Alertmanager configuration with Slack routing
+    alertmanager:
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: fast-ssd
+              accessModes: ['ReadWriteOnce']
+              resources:
+                requests:
+                  storage: 5Gi
+      config:
+        route:
+          group_by: ['alertname', 'namespace']
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+          receiver: slack-notifications
+        receivers:
+          - name: slack-notifications
+            slack_configs:
+              - channel: '#alerts'
+                send_resolved: true
+                title: '{{ .Status | toUpper }}: {{ .CommonLabels.alertname }}'
+                text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
