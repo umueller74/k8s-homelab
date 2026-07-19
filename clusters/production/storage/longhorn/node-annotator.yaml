@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: longhorn-node-annotator
+  namespace: longhorn-system
+spec:
+  template:
+    spec:
+      serviceAccountName: longhorn-annotator-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: annotator
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Targeting and annotating all nodes for Longhorn secondary storage..."
+
+              # Construct the exact Longhorn configuration JSON string
+              DISK_CONFIG='[{"path":"/var/lib/longhorn","allowScheduling":true},{"path":"/var/mnt/storage","allowScheduling":true}]'
+
+              # Annotate and label all worker/controlplane nodes inline
+              kubectl annotate nodes --all node.longhorn.io/default-disks-config="$DISK_CONFIG" --overwrite
+              kubectl label nodes --all node.longhorn.io/create-default-disk="config" --overwrite
+
+              echo "Done!"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: longhorn-annotator-sa
+  namespace: longhorn-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: longhorn-annotator-role
+rules:
+  - apiGroups: ['']
+    resources: ['nodes']
+    verbs: ['get', 'list', 'patch', 'update']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: longhorn-annotator-binding
+subjects:
+  - kind: ServiceAccount
+    name: longhorn-annotator-sa
+    namespace: longhorn-system
+roleRef:
+  kind: ClusterRole
+  name: longhorn-annotator-role
+  apiGroup: rbac.authorization.k8s.io
