@@ -68,3 +68,10 @@ spec:
           - '10.98.0.10:2381'
           - '10.98.0.11:2381'
           - '10.98.0.12:2381'
+  
+    grafana:
+      admin:
+        existingSecret: 'grafana-admin'
+        userKey: 'username'
+        passwordKey: 'password'
+
