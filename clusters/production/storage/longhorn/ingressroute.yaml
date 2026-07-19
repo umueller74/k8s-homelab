@@ -11,11 +11,8 @@ metadata:
     gethomepage.dev/icon: longhorn.png
     gethomepage.dev/app: longhorn
     gethomepage.dev/name: Longhorn
-    gethomepage.dev/widget.type: 'longhorn'
-    gethomepage.dev/widget.url: 'https://longhorn.homelab.cs-ol.de'
     gethomepage.dev/pod-selector: ''
-    gethomepage.dev/weight: 10
-    #gethomepage.dev/instance: 'public'
+    gethomepage.dev/weight: 20
 spec:
   entryPoints:
     - websecure
