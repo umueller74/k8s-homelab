@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - metallb/ks-controller.yaml
   - metallb/ks-config.yaml
+  - metrics-server
