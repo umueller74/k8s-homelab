@@ -74,11 +74,10 @@ data:
           icon: unifi.png
           siteMonitor: https://192.168.0.1
           widget:
-            type: unifi
-            url: https://192.168.0.1
-            #          site: default
-            username: homepage
-            password: 4om3p@gePassw0rd
+              type: unifi
+              url: https://192.168.0.1
+              username: homepage
+              password: 4om3p@gePassw0rd
 
       - Home Assistant:
           href: http://192.168.1.28:8123/
@@ -87,9 +86,9 @@ data:
           server: docker-lab1
           container: homeassistant
           widget:
-            type: homeassistant
-            url: http://192.168.1.28:8123
-            key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMjc1MjA1ZWJiMTE0ZWQzYWRmZmI2NmJjOTEyMjJiNyIsImlhdCI6MTc2NDUwODkxNCwiZXhwIjoyMDc5ODY4OTE0fQ.dMsrNydPd0ZSEpD3U-nJyHcCZp_bP0PAGc8ynIVnvzY
+              type: homeassistant
+              url: http://192.168.1.28:8123
+              key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMjc1MjA1ZWJiMTE0ZWQzYWRmZmI2NmJjOTEyMjJiNyIsImlhdCI6MTc2NDUwODkxNCwiZXhwIjoyMDc5ODY4OTE0fQ.dMsrNydPd0ZSEpD3U-nJyHcCZp_bP0PAGc8ynIVnvzY
 
       - Paperless:
           href: http://192.168.1.28:8001/
@@ -97,31 +96,31 @@ data:
           server: docker-lab1
           container: paperless-webserver-1
           widget:
-            type: paperlessngx
-            url: http://192.168.1.28:8001/
-            username: mueller
-            password: 'Mu5Pbm3M!'
+              type: paperlessngx
+              url: http://192.168.1.28:8001/
+              username: mueller
+              password: 'Mu5Pbm3M!'
 
       - PiHole:
-        href: http://192.168.1.29:3180/admin
-        server: docker-lab2
-        container: pihole
-        icon: si-pihole-#96060C
-        widget:
-          type: pihole
-          url: http://192.168.1.29:3180
-          version: 6
-          key: m73ytQBhQcHMRwNE28DiAPCcSevPeRbOOwdB0WDPo9k=
+          href: http://192.168.1.29:3180/admin
+          server: docker-lab2
+          container: pihole
+          icon: si-pihole-#96060C
+          widget:
+              type: pihole
+              url: http://192.168.1.29:3180
+              version: 6
+              key: m73ytQBhQcHMRwNE28DiAPCcSevPeRbOOwdB0WDPo9k=
 
       - Proxmox Macmini:
           href: https://192.168.1.27:8006/
           icon: proxmox.png
           widget:
-            type: proxmox
-            url: https://192.168.1.27:8006
-            username: root@pam!homepage
-            password: c1337400-bccc-43fe-abd9-3e73e862cc4b
-            cluster: homelab
+              type: proxmox
+              url: https://192.168.1.27:8006
+              username: root@pam!homepage
+              password: c1337400-bccc-43fe-abd9-3e73e862cc4b
+              cluster: homelab
 
       - Proxmox Acemagic:
           href: https://192.168.1.24:8006/
@@ -131,9 +130,9 @@ data:
           href: http://192.168.0.239/
           icon: gitea.png
           widget:
-            type: gitea
-            url: http://192.168.0.239
-            key: giteaapitoken
+              type: gitea
+              url: http://192.168.0.239
+              key: giteaapitoken
 
       - Ansible Semaphore:
           href: http://192.168.1.28:1200/
@@ -147,11 +146,11 @@ data:
           server: docker-lab2
           container: beszel
           widget:
-            type: beszel
-            url: http://192.168.1.29:8099
-            username: info@cs-ol.de
-            password: Mu5Pbm3M!
-            version: 2 # optional, default is 1
+              type: beszel
+              url: http://192.168.1.29:8099
+              username: info@cs-ol.de
+              password: Mu5Pbm3M!
+              version: 2 # optional, default is 1
 
       - 'Uptime Kuma':
           href: http://10.7.0.9:3001/
@@ -159,9 +158,9 @@ data:
           server: docker-ionosxs
           container: uptime-kuma
           widget:
-            type: uptimekuma
-            url: http://10.7.0.9:3001
-            slug: overview
+              type: uptimekuma
+              url: http://10.7.0.9:3001
+              slug: overview
 
       #- Code:
       - NGINX Proxy Manager - INTERN:
@@ -170,10 +169,10 @@ data:
           server: docker-raspi2
           container: nginx-app-1
           widget:
-            type: npm
-            url: http://192.168.0.54:8081
-            username: info@cs-ol.de
-            password: Mu5Pbm3M!
+              type: npm
+              url: http://192.168.0.54:8081
+              username: info@cs-ol.de
+              password: Mu5Pbm3M!
 
       - NGINX Proxy Manager - EXTERN:
           href: http://10.7.0.9:8081/
@@ -181,20 +180,20 @@ data:
           server: docker-ionosxs
           container: nginx-app-1
           widget:
-            type: npm
-            url: http://10.7.0.9:8081
-            username: info@cs-ol.de
-            password: Mu5Pbm3M!
+              type: npm
+              url: http://10.7.0.9:8081
+              username: info@cs-ol.de
+              password: Mu5Pbm3M!
 
       - QNAP:
           href: http://192.168.1.240/
           siteMonitor: http://192.168.1.240/
           icon: qnap.png
           widget:
-            type: qnap
-            url: http://192.168.1.240:8080
-            username: mueller
-            password: 'Mu5Pbm3M!'
+              type: qnap
+              url: http://192.168.1.240:8080
+              username: mueller
+              password: 'Mu5Pbm3M!'
 
       #- Prometheus Stack:
       - Prometheus:
@@ -203,14 +202,16 @@ data:
           server: docker-lab1
           container: prometheus
           widget:
-            type: prometheus
-            url: http://192.168.1.28:9090
+              type: prometheus
+              url: http://192.168.1.28:9090
+
       - Prometheus LOKI:
           href: http://192.168.1.28:4100/
           siteMonitor: http://192.168.1.28:4100/metrics
           icon: loki.png
           server: docker-lab1
           container: loki
+
       - InfluxDB 2:
           href: http://192.168.1.28:8086/
           siteMonitor: http://192.168.1.28:8086/
@@ -224,9 +225,9 @@ data:
           siteMonitor: http://192.168.1.177/
           icon: octoprint.png
           widget:
-            type: octoprint
-            url: http://192.168.1.177
-            key: FdjL_Bj8BtjDzGvcl5vrl__zaaWn_hWrvFW85aGABmY
+              type: octoprint
+              url: http://192.168.1.177
+              key: FdjL_Bj8BtjDzGvcl5vrl__zaaWn_hWrvFW85aGABmY
 
       - ESPHome:
           href: http://192.168.1.28:6052/
@@ -234,10 +235,10 @@ data:
           server: docker-lab1
           container: esphome
           widget:
-            type: esphome
-            url: http://192.168.1.28:6052
-            username: admin
-            password: Mu5Pbm3M!
+              type: esphome
+              url: http://192.168.1.28:6052
+              username: admin
+              password: Mu5Pbm3M!
 
       - TasmoAdmin:
           href: http://192.168.1.28:8000/
@@ -265,12 +266,12 @@ data:
           server: docker-lab1
           container: grafana
           widget:
-            type: grafana
-            version: 2
-            alerts: grafana
-            url: http://192.168.1.28:3001
-            username: admin
-            password: Mu5Pbm3M!
+              type: grafana
+              version: 2
+              alerts: grafana
+              url: http://192.168.1.28:3001
+              username: admin
+              password: Mu5Pbm3M!
 
       - NTFY:
           href: https://ntfy.meatweb2.duckdns.org/
