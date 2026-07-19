@@ -23,7 +23,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`grafan.homelab.cs-ol.de`)
+    - match: Host(`grafana.homelab.cs-ol.de`)
       kind: Rule
       services:
         - name: prometheus-grafana
