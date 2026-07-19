@@ -1,5 +1,29 @@
-# clusters/production/storage/longhorn/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - storage-patch.yaml
+  -  # your standard node/cluster definitions
+
+patches:
+  - target:
+      version: v1
+      kind: Node
+      # Note: Leaving 'name' blank instructs Kustomize to patch EVERY node object it tracks!
+    patch: |-
+      apiVersion: v1
+      kind: Node
+      metadata:
+        labels:
+          # Tells Longhorn this node accepts default disk assignments
+          node.longhorn.io/create-default-disk: "config" 
+        annotations:
+          # A JSON string array declaring both the system disk and your extra Talos disk
+          node.longhorn.io/default-disks-config: '[
+            {
+              "path": "/var/lib/longhorn",
+              "allowScheduling": true
+            },
+            {
+              "path": "/var/mnt/storage",
+              "allowScheduling": true
+            }
+          ]'
