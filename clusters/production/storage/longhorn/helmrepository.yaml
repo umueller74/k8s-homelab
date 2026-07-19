@@ -1,4 +1,3 @@
-# clusters/production/storage/longhorn/helmrepository.yaml
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
@@ -6,5 +5,4 @@ metadata:
   namespace: longhorn-system
 spec:
   interval: 1h
-  # Official Longhorn Helm chart repository
   url: https://charts.longhorn.io
