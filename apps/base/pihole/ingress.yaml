@@ -17,7 +17,7 @@ metadata:
     gethomepage.dev/widget.version: '6'
     gethomepage.dev/widget.key: 'WaS1WxWsuDflnqjnB1ISBQnGrxOwBRxwwHvKlhvxtsI='
     gethomepage.dev/pod-selector: ''
-    gethomepage.dev/weight: 10
+    gethomepage.dev/weight: '10'
     #gethomepage.dev/instance: 'public'
 spec:
   entryPoints:

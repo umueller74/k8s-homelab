@@ -1,84 +1,63 @@
-# clusters/my-cluster/monitoring/helmrelease.yaml
-apiVersion: helm.toolkit.fluxcd.io/v2
+apiVersion: helm.toolkit.fluxcd.io/v1beta2
 kind: HelmRelease
 metadata:
-  name: kube-prometheus-stack
+  name: prometheus
   namespace: monitoring
 spec:
-  interval: 15m
+  interval: 1h
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: '>=84.0.0 <85.0.0'
+      version: '60.x.x' # Use the specific version you need
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
         namespace: flux-system
   values:
-    # Prometheus configuration
-    prometheus:
-      prometheusSpec:
-        # Retain 30 days of metrics
-        retention: 10d
-        retentionSize: '10GB'
-        # Persistent storage for Prometheus data
-        storageSpec:
-          volumeClaimTemplate:
-            spec:
-              storageClassName: fast-ssd
-              accessModes: ['ReadWriteOnce']
-              resources:
-                requests:
-                  storage: 10Gi
-        # Scrape all ServiceMonitors and PodMonitors across namespaces
-        serviceMonitorSelectorNilUsesHelmValues: false
-        serviceMonitorNamespaceSelector: {}
-        podMonitorSelectorNilUsesHelmValues: false
-        podMonitorNamespaceSelector: {}
-        ruleSelectorNilUsesHelmValues: false
-        ruleNamespaceSelector: {}
+    # prometheus-values.yaml
+    server:
+      # Persistent storage for metrics
+      persistentVolume:
+        enabled: true
+        size: 50Gi
 
-    # Grafana configuration
-    grafana:
+      # Retention settings
+      retention: '30d'
+
+      # Resource allocation
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2
+          memory: 4Gi
+
+      # Service configuration
+      service:
+        type: NodePort
+        nodePort: 30090
+
+      # Global scrape interval
+      global:
+        scrape_interval: 15s
+        evaluation_interval: 15s
+
+    # Enable node-exporter for node metrics
+    prometheus-node-exporter:
       enabled: true
-      adminPassword: 'admin' # Override with SOPS Secret in production
+
+    # Enable kube-state-metrics for Kubernetes object metrics
+    kube-state-metrics:
+      enabled: true
+
+    # Alertmanager configuration
+    alertmanager:
+      enabled: true
       persistence:
         enabled: true
-        size: 10Gi
-      ingress:
-        enabled: true
-        hosts:
-          - grafana.homelab.cs-ol.de
+        size: 5Gi
 
-    # Alertmanager configuration with Slack routing
-    alertmanager:
-      alertmanagerSpec:
-        storage:
-          volumeClaimTemplate:
-            spec:
-              storageClassName: fast-ssd
-              accessModes: ['ReadWriteOnce']
-              resources:
-                requests:
-                  storage: 5Gi
-      config:
-        global:
-          resolve_timeout: 5m
-        route:
-          group_by: ['job']
-          group_wait: 30s
-          group_interval: 5m
-          repeat_interval: 12h
-          routes:
-            - match:
-                alertname: InstanceLowMemory2
-                severity: critical
-              receiver: 'null'
-            - match:
-              receiver: 'discord_webhook'
-              continue: true
-        receivers:
-          - name: 'null'
-          - name: 'discord_webhook'
-            webhook_configs:
-              - url: 'http://alertmanager-discord:9094'
+    # Push gateway for batch jobs
+    prometheus-pushgateway:
+      enabled: false
