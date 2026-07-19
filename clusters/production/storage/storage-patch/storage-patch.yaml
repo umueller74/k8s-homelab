@@ -1,0 +1,12 @@
+apiVersion: longhorn.io/v1beta2
+kind: Node
+metadata:
+  name: worker-node-1 # Replace with your exact worker node name
+  namespace: longhorn-system
+spec:
+  disks:
+    extra-pool:
+      allowScheduling: true
+      diskType: filesystem
+      path: /var/mnt/storage # The XFS mount path
+      storageReserved: 10737418240 # Optional: 10 GiB reservation
