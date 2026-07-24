@@ -3,6 +3,17 @@ kind: IngressRoute
 metadata:
   name: headlamp
   namespace: headlamp
+  annotations:
+    gethomepage.dev/href: 'https://headlamp.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Headlamp
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: headlamp.png
+    gethomepage.dev/app: headlamp
+    gethomepage.dev/name: Headlamp
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '1'
+    #gethomepage.dev/instance: 'public'
 spec:
   entryPoints:
     - websecure
@@ -12,4 +23,4 @@ spec:
       services:
         - kind: Service
           name: headlamp
-          port: 80
+          port: 4466
