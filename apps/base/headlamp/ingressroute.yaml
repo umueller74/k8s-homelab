@@ -23,4 +23,4 @@ spec:
       services:
         - kind: Service
           name: headlamp
-          port: 4466
+          port: 80
