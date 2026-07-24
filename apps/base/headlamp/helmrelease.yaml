@@ -33,7 +33,7 @@ spec:
       - name: headlamp-plugins
         persistentVolumeClaim:
           claimName: headlamp
-    replicaCount: 2
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m
