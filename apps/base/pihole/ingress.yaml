@@ -5,7 +5,7 @@ metadata:
   name: pihole
   namespace: pihole
   annotations:
-    gethomepage.dev/href: 'https://pihole.homelab.cs-ol.de'
+    gethomepage.dev/href: 'https://pihole.homelab.cs-ol.de/admin'
     gethomepage.dev/enabled: 'true'
     gethomepage.dev/description: PiHole
     gethomepage.dev/group: Infrastructure
@@ -15,7 +15,7 @@ metadata:
     gethomepage.dev/widget.type: 'pihole'
     gethomepage.dev/widget.url: 'https://pihole.homelab.cs-ol.de'
     gethomepage.dev/widget.version: '6'
-    gethomepage.dev/widget.key: 'WaS1WxWsuDflnqjnB1ISBQnGrxOwBRxwwHvKlhvxtsI='
+    gethomepage.dev/widget.key: '5R2/Xle/hkoCvJBq44aibP/7i2H1iVTTfy2Qn6+IOyw='
     gethomepage.dev/pod-selector: ''
     gethomepage.dev/weight: '10'
     #gethomepage.dev/instance: 'public'
