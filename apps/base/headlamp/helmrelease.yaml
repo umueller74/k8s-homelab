@@ -19,21 +19,13 @@ spec:
   values:
     config:
       pluginsDir: /headlamp/plugins
-        # Configure resource limits
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 500m
-        memory: 256Mi
-    # Persistence for plugins
+      watchPlugins: true
     persistentVolumeClaim:
       enabled: true
       accessModes:
         - ReadWriteOnce
       size: 1Gi
-      storageClassName: standard
+      storageClassName: longhorn
     volumeMounts:
       - name: headlamp-plugins
         mountPath: /headlamp/plugins
@@ -41,3 +33,11 @@ spec:
       - name: headlamp-plugins
         persistentVolumeClaim:
           claimName: headlamp
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
