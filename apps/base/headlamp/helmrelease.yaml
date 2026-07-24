@@ -18,16 +18,26 @@ spec:
 
   values:
     config:
-      clusterInventory:
-        enabled: true
-        accessProvidersConfig:
-          providers:
-            - name: secretreader
-              execConfig:
-                apiVersion: client.authentication.k8s.io/v1
-                command: /access-plugins/secretreader/secretreader-plugin
-                provideClusterInfo: true
-        plugins:
-          - name: secretreader
-            image: registry.k8s.io/cluster-inventory-api/secretreader:v0.1.1
-            mountPath: /access-plugins/secretreader
+      pluginsDir: /headlamp/plugins
+        # Configure resource limits
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    # Persistence for plugins
+    persistentVolumeClaim:
+      enabled: true
+      accessModes:
+        - ReadWriteOnce
+      size: 1Gi
+      storageClassName: standard
+    volumeMounts:
+      - name: headlamp-plugins
+        mountPath: /headlamp/plugins
+    volumes:
+      - name: headlamp-plugins
+        persistentVolumeClaim:
+          claimName: headlamp
