@@ -128,17 +128,21 @@ flux diff helmrelease <name> -n <namespace>
 #### Making Changes
 
 1. **Ensure a GitHub issue exists** for the work (create one if needed)
-2. **Create a feature branch**: `git checkout -b <issue-number>-<short-description>`
+2. **Update local repository**: `git pull origin main` (ensure working with latest changes)
+3. **Create a feature branch**: `git checkout -b <issue-number>-<short-description>`
    - Example: `git checkout -b 42-add-grafana-dashboard`
-3. **Modify manifests** in `apps/base/<app>/` or environment overlays
-4. **Commit changes**: `git add <files> && git commit -m "#<issue-number> descriptive message"`
+4. **Modify manifests** in `apps/base/<app>/` or environment overlays
+5. **Commit changes**: `git add <files> && git commit -m "#<issue-number> descriptive message"`
    - Reference the issue number in commit messages
-5. **Push branch**: `git push -u origin <issue-number>-<short-description>`
-6. **Create pull request**: `gh pr create --title "Closes #<issue-number>: <description>"`
+6. **Push branch**: `git push -u origin <issue-number>-<short-description>`
+7. **Create pull request**: `gh pr create --title "Closes #<issue-number>: <description>"`
    - Link the PR to the issue using "Closes #<number>" in the PR description
-7. **Review and merge**: Once approved, merge the PR to trigger Flux reconciliation
-8. **Monitor deployment**: `flux get kustomizations -w` or check specific app namespace
-9. **Verify and close**: Confirm deployment success, then close the issue if not auto-closed
+8. **Switch back to main**: `git checkout main && git pull origin main`
+   - **IMPORTANT**: Always switch back to main immediately after creating the PR
+   - This prevents accidentally making new changes on the feature branch
+9. **Review and merge**: Once approved, merge the PR to trigger Flux reconciliation
+10. **Monitor deployment**: `flux get kustomizations -w` or check specific app namespace
+11. **Verify and close**: Confirm deployment success, then close the issue if not auto-closed
 
 ### Branch Protection
 
