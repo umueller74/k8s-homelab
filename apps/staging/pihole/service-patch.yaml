@@ -4,4 +4,4 @@ metadata:
   name: pihole-dns
   namespace: pihole
   annotations:
-    metallb.io/loadBalancerIPs: 10.98.0.201
+    metallb.io/loadBalancerIPs: 10.98.0.220
