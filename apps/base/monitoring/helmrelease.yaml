@@ -19,6 +19,7 @@ spec:
       persistentVolume:
         enabled: true
         size: 50Gi
+        storageClassName: longhorn
 
       # Retention settings
       retention: '30d'
@@ -56,6 +57,7 @@ spec:
       persistence:
         enabled: true
         size: 5Gi
+        storageClassName: longhorn
 
     # Push gateway for batch jobs
     prometheus-pushgateway:
