@@ -1,0 +1,32 @@
+# Security - Secrets and credentials
+*.key
+*.pem
+*.crt
+*.env
+secrets/
+*.secret
+*.token
+
+# Backups
+*.bak
+*.backup
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Claude Code session files
+session-env/
+sessions/
+shell-snapshots/
+
+# Temporary files
+*.tmp
+*.log
