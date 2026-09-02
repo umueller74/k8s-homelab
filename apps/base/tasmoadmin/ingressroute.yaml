@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tasmoadmin
+  namespace: tasmoadmin
+  annotations:
+    gethomepage.dev/href: 'https://tasmoadmin.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: TasmoAdmin
+    gethomepage.dev/group: Home Automation
+    gethomepage.dev/icon: tasmoadmin.png
+    gethomepage.dev/app: tasmoadmin
+    gethomepage.dev/name: TasmoAdmin
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '5'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`tasmoadmin.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: tasmoadmin
+          port: 80
+  tls: {}

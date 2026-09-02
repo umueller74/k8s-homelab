@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tasmoadmin
+  namespace: tasmoadmin
+spec:
+  type: ClusterIP
+  selector:
+    app: tasmoadmin
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http
