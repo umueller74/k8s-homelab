@@ -13,4 +13,4 @@ spec:
     - nfsvers=3
   nfs:
     server: 192.168.1.240
-    path: /homelab/volumes/tasmoadmin
+    path: /homelab/volumes/
