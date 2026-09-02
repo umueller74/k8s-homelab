@@ -9,6 +9,8 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
+  mountOptions:
+    - nfsvers=3
   nfs:
     server: 192.168.1.240
-    path: /share/MD0_DATA/homelab/volumes/tasmoadmin
+    path: /homelab/volumes/tasmoadmin
