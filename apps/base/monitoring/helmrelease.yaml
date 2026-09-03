@@ -14,34 +14,43 @@ spec:
         name: prometheus-community
         namespace: flux-system
   values:
-    server:
-      # Persistent storage for metrics
-      persistentVolume:
-        enabled: true
-        size: 50Gi
-        storageClassName: longhorn
+    prometheus:
+      prometheusSpec:
+        # Retention settings
+        retention: 30d
 
-      # Retention settings
-      retention: '30d'
+        # Resource allocation
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2
+            memory: 4Gi
 
-      # Resource allocation
-      resources:
-        requests:
-          cpu: 500m
-          memory: 1Gi
-        limits:
-          cpu: 2
-          memory: 4Gi
+        # Global scrape/evaluation interval
+        scrapeInterval: 15s
+        evaluationInterval: 15s
 
-      # Service configuration
-      service:
-        type: NodePort
-        nodePort: 30090
+        # Persistent storage for metrics
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: longhorn
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 50Gi
 
-      # Global scrape interval
-      global:
-        scrape_interval: 15s
-        evaluation_interval: 15s
+        # Talos exposes etcd metrics unauthenticated on :2381 on each control-plane node
+        additionalScrapeConfigs:
+          - job_name: 'talos-etcd'
+            static_configs:
+              - targets:
+                  - '10.98.0.10:2381'
+                  - '10.98.0.11:2381'
+                  - '10.98.0.12:2381'
 
     # Enable node-exporter for node metrics
     prometheus-node-exporter:
@@ -54,19 +63,17 @@ spec:
     # Alertmanager configuration
     alertmanager:
       enabled: true
-      persistence:
-        enabled: true
-        size: 5Gi
-        storageClassName: longhorn
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: longhorn
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 5Gi
 
     # Push gateway for batch jobs
     prometheus-pushgateway:
       enabled: false
-
-    extraScrapeConfigs: |
-      - job_name: 'talos-etcd'
-        static_configs:
-        - targets:
-          - '10.98.0.10:2381'
-          - '10.98.0.11:2381'
-          - '10.98.0.12:2381'
