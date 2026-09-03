@@ -50,3 +50,10 @@ spec:
 
     frrk8s:
       enabled: false
+
+    prometheus:
+      rbacPrometheus: false
+      podMonitor:
+        enabled: true
+        additionalLabels:
+          release: prometheus

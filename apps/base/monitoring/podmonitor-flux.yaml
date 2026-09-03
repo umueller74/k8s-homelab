@@ -1,0 +1,28 @@
+# Flux controllers expose Prometheus metrics on the http-prom port (8080)
+# by default but have no chart-managed toggle, so scraping is wired up here
+# instead of in a HelmRelease.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: flux-system
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - flux-system
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - helm-controller
+          - kustomize-controller
+          - source-controller
+          - notification-controller
+          - image-reflector-controller
+          - image-automation-controller
+  podMetricsEndpoints:
+    - port: http-prom
+      interval: 30s
