@@ -30,3 +30,6 @@ shell-snapshots/
 # Temporary files
 *.tmp
 *.log
+
+# Claude skill temporary directories
+report/
