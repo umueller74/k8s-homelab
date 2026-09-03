@@ -6,3 +6,5 @@ resources:
   - helmrepository.yaml
   - helmrelease.yaml
   - podmonitor-flux.yaml
+  - dashboard-cluster-overview.yaml
+  - dashboard-cluster-detailed.yaml
