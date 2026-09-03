@@ -97,7 +97,9 @@ spec:
         service:
           enabled: true
         serviceMonitor:
-          enabled: false
+          enabled: true
+          additionalLabels:
+            release: prometheus
 
     # Pod disruption budget for high availability
     podDisruptionBudget:
