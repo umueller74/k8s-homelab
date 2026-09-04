@@ -48,15 +48,13 @@ spec:
               containerPort: 3000
 
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: http
             initialDelaySeconds: 30
             periodSeconds: 15
 
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: http
             initialDelaySeconds: 20
             periodSeconds: 10
