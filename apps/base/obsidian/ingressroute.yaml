@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: obsidian
+  namespace: obsidian
+  annotations:
+    gethomepage.dev/href: 'https://obsidian.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Obsidian
+    gethomepage.dev/group: Productivity
+    gethomepage.dev/icon: obsidian.png
+    gethomepage.dev/app: obsidian
+    gethomepage.dev/name: Obsidian
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '5'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`obsidian.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: obsidian
+          port: 3000
+  tls: {}
