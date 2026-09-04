@@ -12,3 +12,7 @@ spec:
       protocol: TCP
       port: 3000
       targetPort: http
+    - name: api
+      protocol: TCP
+      port: 27124
+      targetPort: 27124

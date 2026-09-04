@@ -7,3 +7,5 @@ resources:
   - service.yaml
   - deployment.yaml
   - ingressroute.yaml
+  - ingressroute-api.yaml
+  - servertransport.yaml

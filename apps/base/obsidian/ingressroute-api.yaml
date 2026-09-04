@@ -1,0 +1,18 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: obsidian-api
+  namespace: obsidian
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`obsidian-api.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: obsidian
+          port: api
+          scheme: https
+          serversTransport: obsidian-api-insecure
+  tls: {}
