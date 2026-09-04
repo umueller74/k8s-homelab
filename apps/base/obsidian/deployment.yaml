@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obsidian
+  namespace: obsidian
+spec:
+  replicas: 1
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: obsidian
+
+  template:
+    metadata:
+      labels:
+        app: obsidian
+
+    spec:
+      containers:
+        - name: obsidian
+          image: lscr.io/linuxserver/obsidian:latest
+
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: '2'
+              memory: 2Gi
+
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: Europe/Berlin
+
+          envFrom:
+            - secretRef:
+                name: obsidian-auth
+
+          ports:
+            - name: http
+              containerPort: 3000
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
+          volumeMounts:
+            - name: obsidian-config
+              mountPath: /config
+            - name: dshm
+              mountPath: /dev/shm
+
+      volumes:
+        - name: obsidian-config
+          persistentVolumeClaim:
+            claimName: obsidian-config
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
