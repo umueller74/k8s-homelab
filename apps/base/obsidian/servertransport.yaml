@@ -1,0 +1,7 @@
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: obsidian-api-insecure
+  namespace: obsidian
+spec:
+  insecureSkipVerify: true
