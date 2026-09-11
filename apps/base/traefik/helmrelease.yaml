@@ -30,6 +30,13 @@ spec:
     api:
       dashboard: true
 
+    # Recreate (not RollingUpdate) is required because the pod mounts a
+    # ReadWriteOnce Longhorn PVC (persistence below): with a single replica,
+    # RollingUpdate tries to start the new pod before releasing the old
+    # pod's volume attachment, which deadlocks the rollout indefinitely.
+    updateStrategy:
+      type: Recreate
+
     # Deployment configuration
     deployment:
       replicas: 1
