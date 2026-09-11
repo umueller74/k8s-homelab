@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gitea-runner-token-bootstrap
+  namespace: gitea
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          serviceAccountName: gitea-runner-token-bootstrapper
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: bootstrap
+              image: bitnami/kubectl:latest
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+
+                  if kubectl -n gitea get secret gitea-runner-credentials >/dev/null 2>&1; then
+                    echo "gitea-runner-credentials already exists, nothing to do"
+                    exit 0
+                  fi
+
+                  if ! kubectl -n gitea rollout status deployment/gitea --timeout=10s >/dev/null 2>&1; then
+                    echo "gitea deployment not ready yet, will retry on next schedule"
+                    exit 0
+                  fi
+
+                  echo "gitea is ready, generating a runner registration token"
+                  TOKEN=$(kubectl -n gitea exec deploy/gitea -- gitea actions generate-runner-token)
+
+                  if [ -z "$TOKEN" ]; then
+                    echo "failed to generate a runner registration token" >&2
+                    exit 1
+                  fi
+
+                  kubectl -n gitea create secret generic gitea-runner-credentials \
+                    --from-literal=registration-token="$TOKEN"
+                  echo "created gitea-runner-credentials"
