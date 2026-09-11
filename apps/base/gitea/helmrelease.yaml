@@ -1,0 +1,89 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gitea
+  namespace: gitea
+
+spec:
+  interval: 30m
+
+  chart:
+    spec:
+      chart: gitea
+      version: "12.x"
+      sourceRef:
+        kind: HelmRepository
+        name: gitea-charts
+        namespace: flux-system
+
+  # Sources the Postgres password (postgresql.global.postgresql.auth.password) from
+  # the "gitea-postgresql-credentials" Secret, created directly on the cluster (not in git),
+  # since the chart bakes this value into its own generated config Secret at render time
+  # and cannot pull it via a Kubernetes secretKeyRef.
+  valuesFrom:
+    - kind: Secret
+      name: gitea-postgresql-credentials
+      valuesKey: values.yaml
+
+  values:
+    replicaCount: 1
+
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: longhorn
+
+    service:
+      http:
+        type: ClusterIP
+      ssh:
+        type: ClusterIP
+
+    ingress:
+      enabled: false
+
+    gitea:
+      admin:
+        existingSecret: gitea-admin-credentials
+        email: udo.mueller@plath.de
+      config:
+        server:
+          DOMAIN: gitea.homelab.cs-ol.de
+          ROOT_URL: https://gitea.homelab.cs-ol.de/
+          SSH_PORT: 22
+        session:
+          PROVIDER: memory
+        cache:
+          ADAPTER: memory
+        queue:
+          TYPE: level
+
+    valkey-cluster:
+      enabled: false
+
+    valkey:
+      enabled: false
+
+    postgresql-ha:
+      enabled: false
+
+    postgresql:
+      enabled: true
+      global:
+        postgresql:
+          auth:
+            database: gitea
+            username: gitea
+      primary:
+        persistence:
+          enabled: true
+          storageClass: longhorn
+          size: 5Gi
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
