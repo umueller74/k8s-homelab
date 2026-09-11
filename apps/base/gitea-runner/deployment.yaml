@@ -27,8 +27,6 @@ spec:
               value: /certs/client
             - name: DOCKER_TLS_VERIFY
               value: "1"
-            - name: CONFIG_FILE
-              value: /config.yaml
             - name: GITEA_INSTANCE_URL
               value: http://gitea-http.gitea.svc.cluster.local:3000
             - name: GITEA_RUNNER_REGISTRATION_TOKEN
