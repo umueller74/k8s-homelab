@@ -2,3 +2,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: gitea
+  labels:
+    # act_runner's docker:dind sidecar (apps/base/gitea-runner) requires
+    # privileged: true, which the cluster's default "baseline" Pod Security
+    # Standard forbids.
+    pod-security.kubernetes.io/enforce: privileged
