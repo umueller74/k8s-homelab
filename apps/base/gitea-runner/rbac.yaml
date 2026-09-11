@@ -1,0 +1,40 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gitea-runner-token-bootstrapper
+  namespace: gitea
+rules:
+  # Used to wait for the gitea Deployment's rollout to be ready.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["gitea"]
+    verbs: ["get", "watch"]
+  # Used to resolve deployment/gitea to a pod and exec into it.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  # Used to check for and create the runner registration-token secret.
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["gitea-runner-credentials"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitea-runner-token-bootstrapper
+  namespace: gitea
+subjects:
+  - kind: ServiceAccount
+    name: gitea-runner-token-bootstrapper
+    namespace: gitea
+roleRef:
+  kind: Role
+  name: gitea-runner-token-bootstrapper
+  apiGroup: rbac.authorization.k8s.io
