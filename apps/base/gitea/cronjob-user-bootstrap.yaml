@@ -1,0 +1,117 @@
+# Creates the non-admin Gitea accounts through the admin API.
+#
+# Runs on a schedule rather than as a one-shot Job so it self-heals: if Gitea is not
+# serving yet (fresh cluster, chart upgrade, restored volume) the run is a no-op and the
+# next tick retries. Account passwords come from the "gitea-user-credentials" Secret,
+# created on the cluster by the homelab Ansible repo and deliberately not stored in git.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gitea-user-bootstrap
+  namespace: gitea
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          restartPolicy: Never
+          # Talks to the Gitea HTTP API only, never to the Kubernetes API.
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: bootstrap
+              image: curlimages/curl:latest
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 64Mi
+              env:
+                - name: GITEA_ADMIN_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: gitea-admin-credentials
+                      key: username
+                - name: GITEA_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: gitea-admin-credentials
+                      key: password
+                - name: CLAUDE_BOT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: gitea-user-credentials
+                      key: claude-bot-password
+                - name: UMUELLER_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: gitea-user-credentials
+                      key: umueller-password
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+
+                  API="http://gitea-http.gitea.svc.cluster.local:3000/api/v1"
+
+                  create_user() {
+                    username="$1"
+                    email="$2"
+                    password="$3"
+
+                    code=$(curl -s -o /dev/null -w '%{http_code}' \
+                      -u "$GITEA_ADMIN_USER:$GITEA_ADMIN_PASSWORD" \
+                      "$API/users/$username")
+
+                    if [ "$code" = "200" ]; then
+                      echo "user $username already exists, nothing to do"
+                      return 0
+                    fi
+
+                    if [ "$code" != "404" ]; then
+                      echo "unexpected status $code looking up user $username" >&2
+                      return 1
+                    fi
+
+                    echo "creating user $username"
+                    # The password goes over stdin so it never shows up in the process table.
+                    code=$(printf \
+                      '{"username":"%s","email":"%s","password":"%s","must_change_password":false}' \
+                      "$username" "$email" "$password" \
+                      | curl -s -o /tmp/response -w '%{http_code}' \
+                        -u "$GITEA_ADMIN_USER:$GITEA_ADMIN_PASSWORD" \
+                        -H 'Content-Type: application/json' \
+                        -X POST --data-binary @- "$API/admin/users")
+
+                    if [ "$code" != "201" ]; then
+                      echo "failed to create user $username (status $code)" >&2
+                      cat /tmp/response >&2
+                      return 1
+                    fi
+
+                    echo "created user $username"
+                  }
+
+                  if ! curl -sf -o /dev/null "$API/version"; then
+                    echo "gitea API not reachable yet, will retry on next schedule"
+                    exit 0
+                  fi
+
+                  create_user claude-bot udo@cs-ol.de "$CLAUDE_BOT_PASSWORD"
+                  create_user umueller info@cs-ol.de "$UMUELLER_PASSWORD"
