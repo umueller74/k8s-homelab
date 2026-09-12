@@ -25,6 +25,11 @@ spec:
           automountServiceAccountToken: false
           securityContext:
             runAsNonRoot: true
+            # curlimages/curl declares its user by name ("curl_user"), not by UID, so the
+            # kubelet cannot verify runAsNonRoot on its own and refuses to start the pod.
+            # Pin an explicit numeric UID instead; the script only writes to /tmp.
+            runAsUser: 65534
+            runAsGroup: 65534
             seccompProfile:
               type: RuntimeDefault
           containers:
