@@ -77,3 +77,11 @@ spec:
     # Push gateway for batch jobs
     prometheus-pushgateway:
       enabled: false
+
+    # Admin credentials sourced from the "grafana-admin" Secret, created directly
+    # on the cluster (not in git) in the monitoring namespace.
+    grafana:
+      admin:
+        existingSecret: grafana-admin
+        userKey: username
+        passwordKey: password
