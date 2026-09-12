@@ -10,8 +10,8 @@ data:
     {
       "id": null,
       "uid": "node-psi",
-      "title": "Node Pressure Stall Information (PSI)",
-      "description": "Linux kernel PSI metrics (/proc/pressure/*) exposed by node_exporter, showing the fraction of time tasks were stalled waiting on CPU, memory, or IO.",
+      "title": "Pressure Stall Information (PSI)",
+      "description": "Linux kernel PSI metrics: node-level (/proc/pressure/*, via node_exporter) and per-pod cgroup-level (via kubelet/cAdvisor), showing the fraction of time tasks were stalled waiting on CPU, memory, or IO.",
       "schemaVersion": 39,
       "version": 1,
       "refresh": "30s",
@@ -252,6 +252,113 @@ data:
             "tooltip": { "mode": "multi", "sort": "desc" }
           },
           "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 }
+        },
+        {
+          "id": 11,
+          "type": "row",
+          "title": "Pod / Container Pressure (Top 10)",
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+          "panels": []
+        },
+        {
+          "id": 12,
+          "type": "timeseries",
+          "title": "Top 10 Pods by CPU Pressure",
+          "description": "Highest per-pod cgroup CPU stall percentage (kubelet/cAdvisor container_pressure_cpu_waiting_seconds_total).",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "topk(10, sum by (namespace, pod) (rate(container_pressure_cpu_waiting_seconds_total[5m])) * 100)",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 }
+        },
+        {
+          "id": 13,
+          "type": "timeseries",
+          "title": "Top 10 Pods by Memory Pressure (full)",
+          "description": "Highest per-pod cgroup memory stall percentage (container_pressure_memory_stalled_seconds_total).",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "topk(10, sum by (namespace, pod) (rate(container_pressure_memory_stalled_seconds_total[5m])) * 100)",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 }
+        },
+        {
+          "id": 14,
+          "type": "timeseries",
+          "title": "Top 10 Pods by IO Pressure (full)",
+          "description": "Highest per-pod cgroup IO stall percentage (container_pressure_io_stalled_seconds_total).",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "topk(10, sum by (namespace, pod) (rate(container_pressure_io_stalled_seconds_total[5m])) * 100)",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 45 }
         }
       ],
       "tags": [
