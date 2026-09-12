@@ -1,0 +1,194 @@
+# Reconciles the Gitea Actions configuration of websites/cs-ol-website, the repo
+# that builds and deploys https://cs-ol.de.
+#
+# Without this, the seven variables and one secret below would be clicked into
+# the Gitea UI by hand: undocumented, unreviewable, and gone after a cluster
+# rebuild. Here the non-secret values live in git where they can be diffed, and
+# the FTPS password comes from the "cs-ol-website-deploy" Secret created on the
+# cluster by the homelab Ansible repo — deliberately not stored here.
+#
+# Runs on a schedule rather than as a one-shot Job, for the same reason as
+# gitea-user-bootstrap: if Gitea is not serving yet, or the repo does not exist
+# yet, the run is a no-op and the next tick retries. It also means a value
+# changed by hand in the UI is corrected within five minutes.
+#
+# Gitea 1.27 API semantics: variables are created with POST (201) and updated
+# with PUT (204); secrets use PUT for both (201). Admin credentials are required
+# — a repo collaborator token is rejected with "user should be the owner of the
+# repo" even with write access.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gitea-actions-config
+  namespace: gitea
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          restartPolicy: Never
+          # Talks to the Gitea HTTP API only, never to the Kubernetes API.
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            # curlimages/curl declares its user by name, not by UID, so the
+            # kubelet cannot verify runAsNonRoot on its own. Pin the UID.
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: actions-config
+              image: curlimages/curl:latest
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 64Mi
+              env:
+                - name: GITEA_ADMIN_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: gitea-admin-credentials
+                      key: username
+                - name: GITEA_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: gitea-admin-credentials
+                      key: password
+                - name: DEPLOY_FTP_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: cs-ol-website-deploy
+                      key: ftp-password
+                      # Optional so the pod still starts before the homelab
+                      # Ansible repo has provisioned the Secret. Without this the
+                      # container would fail to start every five minutes with
+                      # CreateContainerConfigError, which looks like a real fault
+                      # rather than "not provisioned yet". The script checks for
+                      # the empty value and skips the secret write.
+                      optional: true
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+
+                  API="http://gitea-http.gitea.svc.cluster.local:3000/api/v1"
+                  REPO="websites/cs-ol-website"
+
+                  # Desired Actions variables. Non-secret on purpose: this is the
+                  # deploy configuration, and it belongs under review in git.
+                  #
+                  # DEPLOY_HOST must stay cp141.sp-server.net. The FTP service
+                  # presents that certificate CN, so connecting as ftp.cs-ol.de
+                  # fails verification — and the answer to that is never to
+                  # disable certificate verification in the deploy script.
+                  VARS="DEPLOY_TRANSPORT=ftps
+                  DEPLOY_HOST=cp141.sp-server.net
+                  DEPLOY_USER=claude@cs-ol.de
+                  DEPLOY_DOCROOT=/
+                  DEPLOY_SENTINEL=cs-ol.de-production
+                  SITE_URL=https://cs-ol.de
+                  MAX_DELETIONS=200"
+
+                  auth="$GITEA_ADMIN_USER:$GITEA_ADMIN_PASSWORD"
+
+                  if ! curl -sf -o /dev/null "$API/version"; then
+                    echo "gitea API not reachable yet, will retry on next schedule"
+                    exit 0
+                  fi
+
+                  if ! curl -sf -o /dev/null -u "$auth" "$API/repos/$REPO"; then
+                    echo "repo $REPO not present yet, will retry on next schedule"
+                    exit 0
+                  fi
+
+                  rc=0
+
+                  set_variable() {
+                    name="$1"
+                    value="$2"
+                    url="$API/repos/$REPO/actions/variables/$name"
+
+                    code=$(curl -s -o /tmp/current -w '%{http_code}' -u "$auth" "$url")
+
+                    if [ "$code" = "200" ]; then
+                      # Already correct? Then do nothing, so a normal tick is silent.
+                      if grep -qF "\"data\":\"$value\"" /tmp/current; then
+                        return 0
+                      fi
+                      method=PUT
+                      expect=204
+                    elif [ "$code" = "404" ]; then
+                      method=POST
+                      expect=201
+                    else
+                      echo "unexpected status $code reading variable $name" >&2
+                      rc=1
+                      return 0
+                    fi
+
+                    code=$(printf '{"value":"%s"}' "$value" \
+                      | curl -s -o /tmp/response -w '%{http_code}' \
+                        -u "$auth" -H 'Content-Type: application/json' \
+                        -X "$method" --data-binary @- "$url")
+
+                    if [ "$code" != "$expect" ]; then
+                      echo "failed to set variable $name via $method (status $code)" >&2
+                      cat /tmp/response >&2
+                      rc=1
+                      return 0
+                    fi
+
+                    echo "set variable $name"
+                  }
+
+                  # Redirect from a file rather than piping into the loop: a
+                  # pipeline runs the loop in a subshell, where an rc=1 set by
+                  # set_variable would be discarded and the job would report
+                  # success despite having failed to write a variable.
+                  printf '%s\n' "$VARS" > /tmp/vars
+                  while IFS='=' read -r name value; do
+                    [ -n "$name" ] || continue
+                    set_variable "$name" "$value"
+                  done < /tmp/vars
+
+                  # Secrets cannot be read back, so there is nothing to compare
+                  # against — always write, which is what makes a rotation in the
+                  # Ansible repo propagate here on the next tick.
+                  # The value goes over stdin so it never enters the process table.
+                  if [ -z "${DEPLOY_FTP_PASSWORD:-}" ]; then
+                    echo "cs-ol-website-deploy Secret not provisioned yet;" \
+                         "skipping DEPLOY_FTP_PASSWORD"
+                    exit "$rc"
+                  fi
+
+                  code=$(printf '{"data":"%s"}' "$DEPLOY_FTP_PASSWORD" \
+                    | curl -s -o /tmp/response -w '%{http_code}' \
+                      -u "$auth" -H 'Content-Type: application/json' \
+                      -X PUT --data-binary @- \
+                      "$API/repos/$REPO/actions/secrets/DEPLOY_FTP_PASSWORD")
+
+                  case "$code" in
+                    201|204) echo "set secret DEPLOY_FTP_PASSWORD" ;;
+                    *)
+                      echo "failed to set secret DEPLOY_FTP_PASSWORD (status $code)" >&2
+                      cat /tmp/response >&2
+                      rc=1
+                      ;;
+                  esac
+
+                  exit "$rc"

@@ -6,3 +6,4 @@ resources:
   - helmrelease.yaml
   - ingressroute.yaml
   - cronjob-user-bootstrap.yaml
+  - cronjob-actions-config.yaml
