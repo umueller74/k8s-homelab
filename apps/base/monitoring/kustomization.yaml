@@ -8,3 +8,4 @@ resources:
   - podmonitor-flux.yaml
   - dashboard-cluster-overview.yaml
   - dashboard-cluster-detailed.yaml
+  - dashboard-node-psi.yaml

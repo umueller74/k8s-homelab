@@ -1,0 +1,375 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-node-psi
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  node-psi.json: |
+    {
+      "id": null,
+      "uid": "node-psi",
+      "title": "Pressure Stall Information (PSI)",
+      "description": "Linux kernel PSI metrics: node-level (/proc/pressure/*, via node_exporter) and per-pod cgroup-level (via kubelet/cAdvisor), showing the fraction of time tasks were stalled waiting on CPU, memory, or IO.",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "editable": true,
+      "graphTooltip": 1,
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "panels": [
+        {
+          "id": 1,
+          "type": "row",
+          "title": "CPU Pressure",
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "panels": []
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "CPU Pressure (some) by Node",
+          "description": "Share of time at least one task was stalled waiting for CPU time.",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "100 * rate(node_pressure_cpu_waiting_seconds_total[5m])",
+              "legendFormat": "{{instance}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 1 }
+        },
+        {
+          "id": 3,
+          "type": "row",
+          "title": "Memory Pressure",
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+          "panels": []
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Memory Pressure (some) by Node",
+          "description": "Share of time at least one task was stalled waiting on memory (reclaim, swap-in, etc).",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "100 * rate(node_pressure_memory_waiting_seconds_total[5m])",
+              "legendFormat": "{{instance}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 }
+        },
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "Memory Pressure (full) by Node",
+          "description": "Share of time ALL non-idle tasks were stalled on memory simultaneously (severe pressure).",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "100 * rate(node_pressure_memory_stalled_seconds_total[5m])",
+              "legendFormat": "{{instance}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 }
+        },
+        {
+          "id": 6,
+          "type": "row",
+          "title": "IO Pressure",
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+          "panels": []
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "IO Pressure (some) by Node",
+          "description": "Share of time at least one task was stalled waiting on IO.",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "100 * rate(node_pressure_io_waiting_seconds_total[5m])",
+              "legendFormat": "{{instance}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 }
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "IO Pressure (full) by Node",
+          "description": "Share of time ALL non-idle tasks were stalled on IO simultaneously (severe pressure, usually disk-bound).",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "100 * rate(node_pressure_io_stalled_seconds_total[5m])",
+              "legendFormat": "{{instance}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 }
+        },
+        {
+          "id": 9,
+          "type": "row",
+          "title": "IRQ Pressure",
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+          "panels": []
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "IRQ Pressure (full) by Node",
+          "description": "Share of time the CPU was servicing hardware/software interrupts, delaying all other work.",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "100 * rate(node_pressure_irq_stalled_seconds_total[5m])",
+              "legendFormat": "{{instance}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 }
+        },
+        {
+          "id": 11,
+          "type": "row",
+          "title": "Pod / Container Pressure (Top 10)",
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+          "panels": []
+        },
+        {
+          "id": 12,
+          "type": "timeseries",
+          "title": "Top 10 Pods by CPU Pressure",
+          "description": "Highest per-pod cgroup CPU stall percentage (kubelet/cAdvisor container_pressure_cpu_waiting_seconds_total).",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "topk(10, sum by (namespace, pod) (rate(container_pressure_cpu_waiting_seconds_total[5m])) * 100)",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 }
+        },
+        {
+          "id": 13,
+          "type": "timeseries",
+          "title": "Top 10 Pods by Memory Pressure (full)",
+          "description": "Highest per-pod cgroup memory stall percentage (container_pressure_memory_stalled_seconds_total).",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "topk(10, sum by (namespace, pod) (rate(container_pressure_memory_stalled_seconds_total[5m])) * 100)",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 }
+        },
+        {
+          "id": 14,
+          "type": "timeseries",
+          "title": "Top 10 Pods by IO Pressure (full)",
+          "description": "Highest per-pod cgroup IO stall percentage (container_pressure_io_stalled_seconds_total).",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "topk(10, sum by (namespace, pod) (rate(container_pressure_io_stalled_seconds_total[5m])) * 100)",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "calcs": [] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 45 }
+        }
+      ],
+      "tags": [
+        "kubernetes",
+        "node",
+        "psi"
+      ],
+      "templating": {
+        "list": []
+      },
+      "annotations": {
+        "list": []
+      }
+    }
