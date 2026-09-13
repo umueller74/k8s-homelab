@@ -25,6 +25,9 @@ data:
   custom.js: ''
   bookmarks.yaml: |
     - Developer:
+        - Website:
+            - abbr: CS
+              href: https://cs-ol.de
         - Github:
             - abbr: GH
               href: https://github.com/umueller74
