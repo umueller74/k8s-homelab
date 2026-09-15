@@ -51,6 +51,16 @@ spec:
                   - '10.98.0.10:2381'
                   - '10.98.0.11:2381'
                   - '10.98.0.12:2381'
+          # qnapexporter on the QNAP NAS, installed by Ansible (homelab repo).
+          # The NAS is a 2010 TS-419P and is usually IO-bound, so it answers slowly:
+          # scraped less often and with a longer timeout than the global 15s/10s, both
+          # to avoid failed scrapes and to keep the extra load off it.
+          - job_name: 'qnapexporter'
+            scrape_interval: 60s
+            scrape_timeout: 30s
+            static_configs:
+              - targets:
+                  - '192.168.1.240:9094'
 
     # Enable node-exporter for node metrics
     prometheus-node-exporter:
