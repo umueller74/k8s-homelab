@@ -1028,12 +1028,11 @@ spec:
   values:
     worker:
       config:
-        core:
-          sources:
-            - usb
-            - pci
-            - system
-            - kernel
+        # No `core:` block. NFD 0.19's keys are core.featureSources and
+        # core.labelSources (not core.sources), and both already default to
+        # [all] - which includes usb. Naming a non-existent key here would
+        # be ignored at best, and an explicit list would only narrow what
+        # already works.
         sources:
           usb:
             # NFD's default deviceClassWhitelist is ["0e","ef","fe","ff"].
