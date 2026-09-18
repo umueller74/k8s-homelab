@@ -416,9 +416,14 @@ answers.
 
 - [ ] **Step 8: Mirror the change into the Ansible role for rebuild parity**
 
-In `roles/talos/tasks/configure_cluster.yml`, inside the `content:` block of the
-**"Patch controlplane config"** task, add the `udev` key at the `machine:` level and extend
-`machine.network.interfaces`. The `machine:` section becomes:
+⚠️ `configure_cluster.yml` generates **one** `controlplane.yaml` and applies it to all three
+nodes. The udev rule is identical everywhere and belongs in that shared patch. The LAN
+interface is **not** — each node needs its own address, so a single-valued variable would
+silently give talos2 and talos3 talos1's IP. Split them.
+
+**a) The udev rule goes in the shared patch.** In the `content:` block of the
+**"Patch controlplane config"** task, add `udev` at the `machine:` level, leaving everything
+else as it is:
 
 ```yaml
           machine:
@@ -427,34 +432,56 @@ In `roles/talos/tasks/configure_cluster.yml`, inside the `content:` block of the
                 - SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55d4", SYMLINK+="zigbee"
             disks:
               - device: /dev/sdb
-                partitions:
-                  - mountpoint: /var/mnt/storage
-            kubelet:
-              nodeIP:
-                validSubnets: ['{{ talos_node_subnet }}']
-              extraArgs:
-                rotate-server-certificates: true
-            network:
-              interfaces:
-                - interface: "{{ talos_interface }}"
-                  dhcp: true
-                  vip:
-                    ip: "{{ talos_virtual_ip }}"
-                - deviceSelector:
-                    hardwareAddr: "{{ talos_lan_interface_mac }}"
-                  dhcp: false
-                  addresses:
-                    - "{{ talos_lan_interface_address }}"
 ```
 
-Add the two new variables to `roles/talos/defaults/main.yml`:
+**b) The per-node LAN patches are committed as files**, so a rebuild applies the same three
+patches this task applied by hand:
 
-```yaml
-# Second NIC on the untagged LAN, used as the macvlan parent for Home Assistant.
-# Deliberately has no gateway: a second default route would compete with VLAN 99.
-talos_lan_interface_mac: "bc:24:11:b7:5a:1e"
-talos_lan_interface_address: "192.168.3.12/22"
+```bash
+mkdir -p ~/Workspace/homelab/roles/talos/files/lan-patches
+for spec in "talos1 bc:24:11:b7:5a:1e 192.168.3.12" \
+            "talos2 bc:24:11:84:92:c4 192.168.3.13" \
+            "talos3 bc:24:11:7d:be:eb 192.168.3.14"; do
+  set -- $spec
+  cat > ~/Workspace/homelab/roles/talos/files/lan-patches/$1.yaml <<EOF
+# Second NIC on the untagged LAN: the macvlan parent for Home Assistant.
+# Per-node because each needs its own address; see docs/talos-lan-interface.md.
+# Never add a gateway here.
+machine:
+  network:
+    interfaces:
+      - deviceSelector:
+          hardwareAddr: "$2"
+        dhcp: false
+        addresses:
+          - $3/22
+EOF
+done
+ls ~/Workspace/homelab/roles/talos/files/lan-patches/
 ```
+Expected: `talos1.yaml talos2.yaml talos3.yaml`.
+
+**c) Record how to apply them** by appending to `roles/talos/README.md`:
+
+```markdown
+## Per-node LAN interface patches
+
+`files/lan-patches/talos<N>.yaml` configure each node's second NIC, the macvlan
+parent for Home Assistant. They are per-node because each carries a distinct
+address, so they cannot live in the shared `controlplane.yaml` patch. After a
+rebuild, apply each to its own node:
+
+    for n in 1 2 3; do
+      ip=$(( 9 + n ))
+      talosctl -n 10.98.0.$ip -e 10.98.0.$ip patch machineconfig \
+        --patch @roles/talos/files/lan-patches/talos$n.yaml
+    done
+
+See `docs/talos-lan-interface.md` for why they have no gateway.
+```
+
+Do **not** add `talos_lan_interface_mac`/`talos_lan_interface_address` variables — a single
+value cannot be correct for three nodes, which is exactly the trap this split avoids.
 
 - [ ] **Step 9: Document why there is no gateway**
 
@@ -1529,6 +1556,9 @@ entries for ESPHome, WLED and Shelly devices appear. This is the end-to-end proo
 Then wipe the test config so Task 8 starts clean:
 
 ```bash
+# Suspend first: Flux reconciles every 10m and would scale this straight
+# back to 1. Suspend-then-scale holds it down without a commit.
+flux suspend kustomization homeassistant
 kubectl -n homeassistant scale deploy/homeassistant --replicas=0
 kubectl -n homeassistant wait --for=delete pod -l app=homeassistant --timeout=2m
 ```
@@ -1576,12 +1606,16 @@ touched**.
 
 - [ ] **Step 3: Stop the compose stack**
 
+Home Assistant on lab1 is managed by **systemd**, as
+`docker-compose@homeassistant.service` — a bare `docker compose stop` can be undone by the
+unit, leaving the old instance racing the new one for the MQTT client ID and the dongle.
+
 ```bash
-ssh lab1 'cd /docker/homeassistant && docker compose stop'
-ssh lab1 'docker ps --filter name=homeassistant --format "{{.Status}}"'
+ssh lab1 'sudo systemctl stop docker-compose@homeassistant.service'
+ssh lab1 'systemctl is-active docker-compose@homeassistant.service; docker ps --filter name=homeassistant --format "{{.Status}}"'
 ```
-Expected: no output from the second command. Stop rather than `down` so the container
-definition survives for rollback.
+Expected: `inactive`, and no container line. Stop the unit rather than `docker compose down`
+so the container definition survives for rollback.
 
 - [ ] **Step 4: Remove the passthrough from `lab1` in Terraform**
 
@@ -1607,6 +1641,17 @@ If VM 100 *is* in state, delete its `usb_devices` entry from `terraform.tfvars` 
 
 - [ ] **Step 5: Shut down lab1, move the dongle, restart**
 
+⚠️ **This shutdown is household-wide, not Home Assistant-only.** lab1 runs 20 compose
+services. Several are ones Home Assistant itself integrates with, so they must come back
+before the cutover in Task 8 is meaningful:
+
+```bash
+ssh lab1 'systemctl list-units "docker-compose@*.service" --state=active --no-legend | awk "{print \$1}"'
+```
+Expected to include at least `mosquitto` (the MQTT broker), `esphome`, `influxdb`, `pihole`,
+`grafana`, `paperless`, `n8n` and `nginx`. Save this list in the issue — it is what must be
+running again after the reboot.
+
 ```bash
 ssh lab1 'sudo shutdown -h now' || true
 ssh pve 'qm status 100'
@@ -1618,7 +1663,16 @@ machine and plug it into `pve2`.** Then:
 ssh pve2 'lsusb | grep 1a86:55d4'
 ssh pve  'qm start 100'
 ```
-Expected: `pve2` now lists `SONOFF Zigbee 3.0 USB Dongle Plus V2`. Note that `pve2` already
+Expected: `pve2` now lists `SONOFF Zigbee 3.0 USB Dongle Plus V2`.
+
+Once lab1 is back, confirm every service from the list above returned **except**
+`homeassistant`, which Task 7 Step 3 deliberately stopped:
+
+```bash
+ssh lab1 'systemctl list-units "docker-compose@*.service" --state=active --no-legend | awk "{print \$1}"'
+ssh lab1 'systemctl is-active docker-compose@homeassistant.service'
+```
+Expected: the same list minus `homeassistant`, and `inactive` for it. Note that `pve2` already
 has a different CH340 device (`1a86:7523`) attached — match on `55d4`, not on `1a86`.
 
 - [ ] **Step 6: Add the passthrough to talos1 in Terraform**
@@ -1730,15 +1784,15 @@ git checkout -b $ISSUE-homeassistant-cutover
 - [ ] **Step 2: Confirm the source is still readable and HA is stopped**
 
 ```bash
-ssh lab1 'docker ps --filter name=homeassistant --format "{{.Status}}"; findmnt -T /docker/homeassistant/config -o SOURCE,FSTYPE; du -sh /docker/homeassistant/config'
+ssh lab1 'systemctl is-active docker-compose@homeassistant.service; findmnt -T /docker/homeassistant/config -o SOURCE,FSTYPE; du -sh /docker/homeassistant/config'
 ```
-Expected: no running container (stopped in Task 7), the NFS source still mounted, 27 G
-total. If the NFS mount is gone, **stop** — the QNAP registers no `mountd`, so it cannot be
+Expected: `inactive` (stopped in Task 7), the NFS source still mounted, 27 G total. If the NFS mount is gone, **stop** — the QNAP registers no `mountd`, so it cannot be
 remounted, and the migration cannot proceed. Nothing has been lost; Task 7 is reversible.
 
 - [ ] **Step 3: Start a helper pod with the PVC mounted**
 
 ```bash
+flux suspend kustomization homeassistant   # see Task 6 Step 11
 kubectl -n homeassistant scale deploy/homeassistant --replicas=0
 kubectl -n homeassistant wait --for=delete pod -l app=homeassistant --timeout=2m
 
@@ -1798,29 +1852,48 @@ Expected: roughly 10 G total; `configuration.yaml`, `home-assistant_v2.db`, `zig
 `.storage` all present; no `corrupt` files. The two file counts differ by exactly the
 excluded entries.
 
-- [ ] **Step 6: Add the reverse-proxy settings to the migrated config**
+- [ ] **Step 6: Add the pod network to the existing `trusted_proxies`**
 
-```bash
-kubectl -n homeassistant exec ha-migrate -- sh -c '
-  grep -n "^http:" /data/configuration.yaml || echo "no http: block yet"
-'
-```
+⚠️ `configuration.yaml` **already has an `http:` block** — verified on lab1, at line 7:
 
-If there is no `http:` block, append one; if there is, merge these keys into it:
-
-```bash
-kubectl -n homeassistant exec -i ha-migrate -- sh -c 'cat >> /data/configuration.yaml' <<'EOF'
-
-# Added during the move into Kubernetes. Traefik terminates TLS and proxies to
-# the pod from the flannel pod network, so Home Assistant must trust it or
-# every request appears to come from a single internal address.
+```yaml
 http:
   use_x_forwarded_for: true
   trusted_proxies:
-    - 10.244.0.0/16
-EOF
-kubectl -n homeassistant exec ha-migrate -- tail -12 /data/configuration.yaml
+    - 10.7.0.0/24
+    - 85.215.138.242/32
+  ip_ban_enabled: true
+  login_attempts_threshold: 10
 ```
+
+Appending a second `http:` block would be a duplicate YAML key. The two existing
+`trusted_proxies` entries are pre-existing remote-access paths and **must be preserved** —
+this migration was not asked to change them. The only edit is to *add* the flannel pod CIDR
+to the existing list.
+
+First confirm the block is still exactly as expected:
+
+```bash
+kubectl -n homeassistant exec ha-migrate -- sed -n '1,20p' /data/configuration.yaml
+```
+Expected: the block above. If it differs, hand-edit rather than running the command below.
+
+```bash
+kubectl -n homeassistant exec ha-migrate -- sh -c '
+  cp /data/configuration.yaml /data/configuration.yaml.pre-k8s
+  # Insert the pod CIDR as the first entry under the existing trusted_proxies key.
+  sed -i "/^  trusted_proxies:/a\\    - 10.244.0.0/16   # flannel pod network: Traefik proxies from here" /data/configuration.yaml
+'
+kubectl -n homeassistant exec ha-migrate -- sed -n '1,20p' /data/configuration.yaml
+```
+Expected: `10.244.0.0/16` now appears as the first list entry under `trusted_proxies`, with
+`10.7.0.0/24` and `85.215.138.242/32` still below it, and exactly **one** `http:` key in the
+file:
+
+```bash
+kubectl -n homeassistant exec ha-migrate -- grep -c '^http:' /data/configuration.yaml
+```
+Expected: `1`. `configuration.yaml.pre-k8s` is the rollback.
 
 - [ ] **Step 7: Point ZHA at the new device path**
 
@@ -1933,6 +2006,7 @@ Part of the Home Assistant migration, k8s-homelab#61.
 🤖 Generated with [Claude Code](https://claude.com/claude-code)"
 git checkout main && git pull origin main
 
+flux resume kustomization homeassistant
 flux reconcile kustomization homeassistant --with-source
 kubectl -n homeassistant scale deploy/homeassistant --replicas=1
 kubectl -n homeassistant rollout status deploy/homeassistant --timeout=15m
@@ -1984,7 +2058,7 @@ so rollback stays available until the stack is explicitly decommissioned.
    `talosctl -n 10.98.0.10 -e 10.98.0.10 reboot`
 3. Physically move the dongle from `pve2` back to `pve`.
 4. `ssh pve 'qm set 100 --usb1 host=1a86:55d4'` and reboot `lab1`.
-5. `ssh lab1 'cd /docker/homeassistant && docker compose up -d'`
+5. `ssh lab1 'sudo systemctl start docker-compose@homeassistant.service'`
 
 The Longhorn PVC uses `longhorn-retain`, so the migrated data survives even if
 the Kustomization is deleted.
