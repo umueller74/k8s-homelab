@@ -1,0 +1,18 @@
+# The nfd-worker DaemonSet mounts eight hostPath volumes (/sys, /boot,
+# /etc/os-release, /usr/lib, /lib ...) to read hardware features. Talos
+# enforces PodSecurity "baseline" in every namespace except kube-system, and
+# baseline forbids hostPath volumes, so this namespace must be labelled
+# privileged -- the same convention metallb-system, longhorn-system,
+# monitoring and cni-plugins already use in this repo.
+#
+# Without these labels the failure is SILENT: the DaemonSet is created and
+# Flux reports Ready, because enforcement applies to pods, not workload
+# templates. Only the pods are rejected, so `rollout status` simply hangs.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: node-feature-discovery
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
