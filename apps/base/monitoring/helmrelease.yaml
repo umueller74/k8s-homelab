@@ -16,8 +16,22 @@ spec:
   values:
     prometheus:
       prometheusSpec:
-        # Retention settings
+        # Retention settings.
+        #
+        # retentionSize is the load-bearing one: time-based retention alone can
+        # never be safe on a fixed volume. Without it this filled the 50Gi disk,
+        # compaction stopped completing, the WAL grew to 776 segments, and replay
+        # outgrew the startup probe - so the pod was killed mid-replay and
+        # restarted from zero, indefinitely.
+        #
+        # Keep retentionSize comfortably below the volume size (60GiB of 80Gi)
+        # so there is headroom for the WAL and for compaction.
         retention: 30d
+        retentionSize: 60GiB
+
+        # Default is 900s. A large WAL backlog takes longer than that to replay,
+        # and being killed part-way means starting over rather than catching up.
+        maximumStartupDurationSeconds: 3600
 
         # Resource allocation
         resources:
@@ -41,7 +55,7 @@ spec:
                 - ReadWriteOnce
               resources:
                 requests:
-                  storage: 50Gi
+                  storage: 80Gi
 
         # Talos exposes etcd metrics unauthenticated on :2381 on each control-plane node
         additionalScrapeConfigs:
