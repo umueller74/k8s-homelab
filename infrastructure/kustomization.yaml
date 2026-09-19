@@ -5,3 +5,4 @@ resources:
   - metallb/ks-controller.yaml
   - metallb/ks-config.yaml
   - cni-plugins/ks.yaml
+  - multus/ks.yaml
