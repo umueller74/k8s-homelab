@@ -1635,7 +1635,19 @@ Open `https://homeassistant.homelab.cs-ol.de`, complete the onboarding wizard wi
 throwaway account, and check **Settings → Devices & Services**. Expected: discovered
 entries for ESPHome, WLED and Shelly devices appear. This is the end-to-end proof.
 
-Then wipe the test config so Task 8 starts clean:
+Onboarding writes a full config onto the PVC — `.storage` with a throwaway
+account, `configuration.yaml`, an empty `home-assistant_v2.db`. **That state must
+not survive into the real config.** Task 8 Step 4 restores with `tar -x`, which
+overwrites files but never deletes them, so any file unique to the test instance
+would quietly persist alongside the migrated data.
+
+Deleting it is therefore Task 8 Step 3's job, immediately before the restore —
+not here, hours or days earlier. Leaving the test instance running until then is
+harmless: it holds no credentials worth keeping and adopts nothing unless asked.
+
+If you would rather not leave a second Home Assistant advertising itself on the
+LAN in the meantime, hold it down — but note that **Task 8 Step 3 repeats these
+two commands**, so skipping this block costs nothing:
 
 ```bash
 # Suspend first: Flux reconciles every 10m and would scale this straight
@@ -1901,7 +1913,24 @@ EOF
 kubectl -n homeassistant wait --for=condition=Ready pod/ha-migrate --timeout=2m
 kubectl -n homeassistant exec ha-migrate -- ls -la /data
 ```
-Expected: `/data` is empty (or holds only `lost+found`).
+
+`/data` is **not** empty: Task 6 Step 11's onboarding left a complete throwaway
+config on it. Look at what is there, confirm it is only that, then clear it —
+`tar -x` in Step 4 overwrites but never deletes, so anything unique to the test
+instance would otherwise survive into the migrated config:
+
+```bash
+# Look before you delete. Everything here should be dated from the Step 11
+# onboarding and nothing else. A stale home-assistant_v2.db of any real size
+# means you are pointed at the wrong volume - stop.
+kubectl -n homeassistant exec ha-migrate -- sh -c 'ls -la /data; du -sh /data'
+
+kubectl -n homeassistant exec ha-migrate -- sh -c 'rm -rf /data/..?* /data/.[!.]* /data/*'
+kubectl -n homeassistant exec ha-migrate -- ls -la /data
+```
+Expected after the wipe: `/data` is empty (or holds only `lost+found`). The
+glob triple is deliberate — a bare `/data/*` misses `.storage`, which is the one
+directory that most needs to go.
 
 - [ ] **Step 4: Stream the data in, excluding the dead weight**
 
