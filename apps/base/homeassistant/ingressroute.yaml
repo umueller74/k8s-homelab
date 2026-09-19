@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: homeassistant
+  namespace: homeassistant
+  annotations:
+    gethomepage.dev/href: 'https://homeassistant.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Automate your home
+    gethomepage.dev/group: Home Automation
+    gethomepage.dev/icon: home-assistant.png
+    gethomepage.dev/app: homeassistant
+    gethomepage.dev/name: Home Assistant
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '1'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`homeassistant.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: homeassistant
+          port: 8123
+  tls: {}

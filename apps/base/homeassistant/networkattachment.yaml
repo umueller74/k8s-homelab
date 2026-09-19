@@ -1,0 +1,36 @@
+# Gives the Home Assistant pod a real address on the household LAN so mDNS and
+# SSDP discovery work. Roughly 40 of its config entries - esphome, homekit,
+# wled, shelly, cast, dlna, matter and others - depend on this.
+#
+# Two details are load-bearing and neither is optional:
+#
+#  * No "gateway". A macvlan default route would take precedence over the pod
+#    network and break cluster DNS. The /22 address alone routes LAN traffic
+#    out net1; internet and in-cluster traffic keeps using eth0.
+#
+#  * The explicit 224.0.0.0/4 route. Without it, queries to 224.0.0.251 follow
+#    the default route out eth0 into flannel and are never seen on the LAN.
+#    This single line is what makes discovery work.
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: lan-macvlan
+  namespace: homeassistant
+spec:
+  config: |
+    {
+      "cniVersion": "0.3.1",
+      "name": "lan-macvlan",
+      "type": "macvlan",
+      "master": "ens19",
+      "mode": "bridge",
+      "ipam": {
+        "type": "static",
+        "addresses": [
+          { "address": "192.168.3.11/22" }
+        ],
+        "routes": [
+          { "dst": "224.0.0.0/4" }
+        ]
+      }
+    }

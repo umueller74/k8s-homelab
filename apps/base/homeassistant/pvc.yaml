@@ -1,0 +1,14 @@
+# longhorn-retain, not the default longhorn class: an accidental Kustomization
+# delete must not take the Home Assistant database with it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: homeassistant-config
+  namespace: homeassistant
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 20Gi
