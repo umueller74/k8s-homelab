@@ -1,0 +1,61 @@
+# Talos ships a minimal /opt/cni/bin: bridge, firewall, flannel, host-local,
+# loopback, portmap. Multus + macvlan additionally need the macvlan plugin and
+# the static IPAM plugin.
+#
+# ghcr.io/siderolabs/install-cni is Sidero's own image and carries the full
+# upstream plugin set built for Talos. Its bundled script copies *everything*,
+# which would overwrite the running flannel and bridge binaries; this DaemonSet
+# deliberately copies only the two plugins that are missing.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: install-cni-plugins
+  namespace: cni-plugins
+  labels:
+    app: install-cni-plugins
+spec:
+  selector:
+    matchLabels:
+      app: install-cni-plugins
+  template:
+    metadata:
+      labels:
+        app: install-cni-plugins
+    spec:
+      hostNetwork: true
+      priorityClassName: system-node-critical
+      tolerations:
+        - operator: Exists
+      initContainers:
+        - name: install
+          image: ghcr.io/siderolabs/install-cni:v1.4.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              mkdir -p /host/opt/cni/bin
+              for plugin in macvlan static; do
+                cp -f "/opt/cni/bin/$plugin" "/host/opt/cni/bin/$plugin.tmp"
+                mv -f "/host/opt/cni/bin/$plugin.tmp" "/host/opt/cni/bin/$plugin"
+                echo "installed $plugin"
+              done
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host-cni-bin
+              mountPath: /host/opt/cni/bin
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.10
+          resources:
+            requests:
+              cpu: 1m
+              memory: 4Mi
+            limits:
+              memory: 16Mi
+      volumes:
+        - name: host-cni-bin
+          hostPath:
+            path: /opt/cni/bin
+            type: DirectoryOrCreate

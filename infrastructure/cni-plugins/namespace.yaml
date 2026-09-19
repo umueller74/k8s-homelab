@@ -1,0 +1,13 @@
+# The installer needs privileged + hostNetwork + a hostPath mount of
+# /opt/cni/bin. Talos enforces PodSecurity "baseline" by default in every
+# namespace except kube-system, which rejects all three, so this namespace is
+# labelled privileged -- the same convention metallb-system, longhorn-system
+# and monitoring already use in this repo.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cni-plugins
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
