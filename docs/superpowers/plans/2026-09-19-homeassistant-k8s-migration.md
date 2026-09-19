@@ -1288,10 +1288,26 @@ Expected: `Error from server (NotFound)`. This is the "failing test".
 ```bash
 mkdir -p apps/base/homeassistant apps/production/homeassistant
 cat > apps/base/homeassistant/namespace.yaml <<'EOF'
+# The Deployment below adds NET_ADMIN and NET_RAW. Talos enforces PodSecurity
+# "baseline" in every namespace except kube-system, and baseline's allowed
+# capabilities.add list contains neither -- verified against this cluster:
+#
+#   Error from server (Forbidden): pods "pss-probe" is forbidden: violates
+#   PodSecurity "baseline:latest": non-default capabilities (container "c"
+#   must not include "NET_ADMIN", "NET_RAW" in securityContext.capabilities.add)
+#
+# Without these labels the failure is SILENT in the usual place: enforcement
+# applies to pods, not to workload templates, so the Deployment is created and
+# only the ReplicaSet's pods are rejected. `rollout status` hangs with nothing
+# obviously wrong. Same trap as cni-plugins (Task 3) and NFD (Task 5).
 apiVersion: v1
 kind: Namespace
 metadata:
   name: homeassistant
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
 EOF
 
 cat > apps/base/homeassistant/networkattachment.yaml <<'EOF'
@@ -1578,6 +1594,16 @@ POD=$(kubectl -n homeassistant get pod -l app=homeassistant -o name | head -1)
 kubectl -n homeassistant exec $POD -- ip -br addr
 kubectl -n homeassistant exec $POD -- ip route
 ```
+
+If the pod never appears at all, check for a PodSecurity rejection before
+anything else -- it is the one failure mode that leaves no pod to describe:
+
+```bash
+kubectl -n homeassistant get events --sort-by=.lastTimestamp | grep -i forbidden
+kubectl -n homeassistant describe replicaset -l app=homeassistant | grep -A3 Events
+```
+Expected: no output. Any `violates PodSecurity` line means the namespace labels
+in Step 3 did not land.
 Expected: the PVC is `Bound`; the pod has **`eth0` with a `10.244.x.x` address and `net1`
 with `192.168.3.11/22`**; the route table shows a default via `eth0`, a `192.168.0.0/22`
 route via `net1`, and **`224.0.0.0/4 dev net1`**. If `net1` is missing, read
@@ -1593,7 +1619,11 @@ curl -sS -o /dev/null -w "%{http_code}\n" http://192.168.3.11:8123/
 curl -sS -o /dev/null -w "%{http_code}\n" https://homeassistant.homelab.cs-ol.de/
 
 # And multicast must be reaching it. From lab1, which is on the same LAN:
-ssh lab1 'timeout 10 tcpdump -ni ens18 host 192.168.3.11 and port 5353 -c 5' 2>&1
+# lab1 has no tcpdump installed and this is not the place to install one.
+# Run it in a throwaway container on lab1's host network instead -- same
+# packets, nothing left behind. lab1's LAN interface is ens18 (192.168.1.28/22).
+ssh lab1 "timeout 20 docker run --rm --net=host --cap-add=NET_RAW --cap-add=NET_ADMIN \
+  nicolaka/netshoot tcpdump -ni ens18 'host 192.168.3.11 and port 5353' -c 5" 2>&1
 ```
 Expected: ping succeeds, both HTTP checks return `200`, and tcpdump captures mDNS packets
 **sourced from `192.168.3.11`**. Traffic sourced from a `10.244.x.x` address instead means
