@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homeassistant
+  namespace: homeassistant
+spec:
+  replicas: 1
+
+  # SQLite and a serial device tolerate exactly one writer. Never RollingUpdate.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: homeassistant
+
+  template:
+    metadata:
+      labels:
+        app: homeassistant
+      annotations:
+        k8s.v1.cni.cncf.io/networks: homeassistant/lan-macvlan
+
+    spec:
+      containers:
+        - name: homeassistant
+          image: ghcr.io/home-assistant/home-assistant:2026.9.3
+
+          securityContext:
+            capabilities:
+              # Parity with the compose stack's cap_add. The four ping
+              # integrations need raw sockets.
+              add:
+                - NET_ADMIN
+                - NET_RAW
+
+          env:
+            - name: TZ
+              value: Europe/Berlin
+            - name: LANG
+              value: C.UTF-8
+
+          ports:
+            - name: http
+              containerPort: 8123
+
+          # Home Assistant with 100+ config entries and a 9 GB recorder
+          # database can take several minutes to answer. A startupProbe with a
+          # long window keeps the liveness probe from killing it mid-start.
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+
+          volumeMounts:
+            - name: config
+              mountPath: /config
+
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: homeassistant-config
