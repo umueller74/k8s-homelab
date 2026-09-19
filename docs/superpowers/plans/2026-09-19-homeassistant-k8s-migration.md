@@ -52,7 +52,9 @@ contradict the spec, **this plan is correct** and Task 5 amends the spec.
   `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>` and PR descriptions with
   `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
 - **Exact values, copied verbatim from the spec and from live verification:**
-  - Talos nodes: `talos1`/`10.98.0.10`, `talos2`/`10.98.0.11`, `talos3`/`10.98.0.12`, VIP `10.98.0.9`
+  - Talos nodes (VERIFIED 2026-09-19 via `ens18` MAC — talos2/talos3 are NOT in IP order):
+    `talos1`=VM900=`10.98.0.10`=`talos-0hr-sdd`, `talos2`=VM901=`10.98.0.12`=`talos-isv-pq4`,
+    `talos3`=VM902=`10.98.0.11`=`talos-9rs-4ei`. VIP `10.98.0.9` on talos1.
   - Proxmox VMIDs: `900`, `901`, `902` on node `pve2`; `lab1` is VMID `100` on node `pve`
   - Dongle USB ID: `1a86:55d4`, device class `02`
   - HA LAN IP: `192.168.3.11/22`, LAN gateway `192.168.0.1` (deliberately **not** configured)
@@ -250,10 +252,10 @@ with no `tag=`.
 
 ```bash
 export TALOSCONFIG=~/.talos/talosconfig
-talosctl -n 10.98.0.12 -e 10.98.0.12 reboot
+talosctl -n 10.98.0.12 -e 10.98.0.12 reboot   # talos2 = VM901 = 10.98.0.12   # talos3 = VM902 = 10.98.0.11
 # wait, then:
 kubectl get nodes
-talosctl -n 10.98.0.12 -e 10.98.0.12 get links | grep -E "ens1[89]"
+talosctl -n 10.98.0.11 -e 10.98.0.11 get links | grep -E "ens1[89]"
 ```
 Expected: all three nodes `Ready`; `ens19` listed with hardware address
 `bc:24:11:7d:be:eb`. If `ens19` does not appear, record the actual name — Task 2 selects by
@@ -381,38 +383,68 @@ talosctl validate --config /tmp/cp-checked.yaml --mode cloud
 Expected: `/tmp/cp-checked.yaml is valid for cloud mode`. (This exact patch shape was
 validated against the live `controlplane.yaml` while writing this plan.)
 
-- [ ] **Step 5: Apply to talos3 first**
+### ⚠️ Verified node mapping — do not infer it
+
+`talos2` and `talos3` are **not** in IP order. Confirmed 2026-09-19 from each node's `ens18`
+MAC (`talosctl get links`) matched against `terraform.tfvars`:
+
+| Logical | VMID | `ens18` MAC | Node IP | Kubernetes node | `ens19` MAC | LAN address |
+|---|---|---|---|---|---|---|
+| talos1 | 900 | `bc:24:11:b7:5a:1d` | `10.98.0.10` | `talos-0hr-sdd` | `bc:24:11:b7:5a:1e` | `192.168.3.12/22` |
+| talos2 | 901 | `bc:24:11:84:92:c3` | **`10.98.0.12`** | `talos-isv-pq4` | `bc:24:11:84:92:c4` | `192.168.3.13/22` |
+| talos3 | 902 | `bc:24:11:7d:be:ea` | **`10.98.0.11`** | `talos-9rs-4ei` | `bc:24:11:7d:be:eb` | `192.168.3.14/22` |
+
+Applying a patch to the wrong node is not destructive — the `deviceSelector` matches no
+interface — but it leaves that node silently unconfigured, which is harder to debug than a
+clean failure. Re-verify if any node is ever rebuilt:
 
 ```bash
-talosctl -n 10.98.0.12 -e 10.98.0.12 patch machineconfig --patch @~/.talos/patches/lan-nic-talos3.yaml
+export TALOSCONFIG=~/.talos/talosconfig
+for n in 10.98.0.10 10.98.0.11 10.98.0.12; do
+  echo -n "$n -> "; talosctl -n $n -e $n get links 2>/dev/null | awk '$4=="ens18"{print $0}' | grep -oE "bc:[0-9a-f:]+"
+done
 ```
-Talos applies network and udev changes without a reboot. If it reports a reboot is
-required, let it reboot and wait for `Ready`.
+
+Also confirmed 2026-09-19: the second interface is named **`ens19`**, and it comes up
+(`OPER STATE: up`) with no machine config at all. The static address below is therefore not
+what brings the link up — it guarantees it, and makes the node reachable on the LAN for
+debugging.
+
+- [ ] **Step 5: Apply to talos3 first**
+
+talos3 is `10.98.0.11`. It holds neither the VIP nor (later) the dongle, so a mistake is
+cheapest here.
+
+```bash
+talosctl -n 10.98.0.11 -e 10.98.0.11 patch machineconfig --patch @~/.talos/patches/lan-nic-talos3.yaml
+```
+Talos applies network and udev changes without a reboot. If it reports a reboot is required,
+let it reboot and wait for `Ready`.
 
 - [ ] **Step 6: Verify on talos3**
 
 ```bash
-talosctl -n 10.98.0.12 -e 10.98.0.12 get addresses | grep 192.168.3.14
+talosctl -n 10.98.0.11 -e 10.98.0.11 get addresses | grep 192.168.3.14
 ping -c2 192.168.3.14
-kubectl get nodes -o wide   # INTERNAL-IP must still be 10.98.0.12
-talosctl -n 10.98.0.12 -e 10.98.0.12 get routes | grep default
+kubectl get nodes -o wide   # INTERNAL-IP must still be 10.98.0.11
+talosctl -n 10.98.0.11 -e 10.98.0.11 get routes | grep default
 ```
 Expected: the address is present and pingable from the LAN; the node's `INTERNAL-IP` is
-**unchanged** at `10.98.0.12`; exactly **one** default route, via the VLAN-99 gateway. If a
+**unchanged** at `10.98.0.11`; exactly **one** default route, via the VLAN-99 gateway. If a
 second default route appeared, revert this node immediately and stop.
 
 - [ ] **Step 7: Apply to talos2, then talos1, verifying after each**
 
 ```bash
-talosctl -n 10.98.0.11 -e 10.98.0.11 patch machineconfig --patch @~/.talos/patches/lan-nic-talos2.yaml
+talosctl -n 10.98.0.12 -e 10.98.0.12 patch machineconfig --patch @~/.talos/patches/lan-nic-talos2.yaml
 kubectl get nodes && ping -c2 192.168.3.13
 
 talosctl -n 10.98.0.10 -e 10.98.0.10 patch machineconfig --patch @~/.talos/patches/lan-nic-talos1.yaml
 kubectl get nodes && ping -c2 192.168.3.12
 ```
 Expected after each: all three nodes `Ready`, `INTERNAL-IP` unchanged, new address pingable.
-talos1 holds the VIP `10.98.0.9` — confirm `curl -k https://10.98.0.9:6443/version` still
-answers.
+talos1 (`10.98.0.10`) holds the VIP `10.98.0.9` — confirm
+`curl -k https://10.98.0.9:6443/version` still answers.
 
 - [ ] **Step 8: Mirror the change into the Ansible role for rebuild parity**
 
@@ -471,10 +503,12 @@ parent for Home Assistant. They are per-node because each carries a distinct
 address, so they cannot live in the shared `controlplane.yaml` patch. After a
 rebuild, apply each to its own node:
 
-    for n in 1 2 3; do
-      ip=$(( 9 + n ))
-      talosctl -n 10.98.0.$ip -e 10.98.0.$ip patch machineconfig \
-        --patch @roles/talos/files/lan-patches/talos$n.yaml
+    # talos2 and talos3 are NOT in IP order; verify against the ens18 MAC
+    # after any rebuild before trusting this mapping.
+    for pair in "talos1 10.98.0.10" "talos2 10.98.0.12" "talos3 10.98.0.11"; do
+      set -- $pair
+      talosctl -n $2 -e $2 patch machineconfig \
+        --patch @roles/talos/files/lan-patches/$1.yaml
     done
 
 See `docs/talos-lan-interface.md` for why they have no gateway.
