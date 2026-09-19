@@ -6,3 +6,4 @@ resources:
   - metallb/ks-config.yaml
   - cni-plugins/ks.yaml
   - multus/ks.yaml
+  - node-feature-discovery/ks.yaml

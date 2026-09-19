@@ -147,11 +147,13 @@ would fit, but not with room to be wrong.
 ### 4.2 Node labelling — `k8s-homelab`, `infrastructure/node-feature-discovery/`
 
 Deploy Node Feature Discovery via HelmRelease, with the `usb` source enabled and device
-class `ff` (vendor-specific, which the dongle's CH9102 bridge presents) whitelisted. On
+class `02` (CDC — verified from `/sys/bus/usb/devices/2-2/bDeviceClass` on `lab1`) added
+to the whitelist. NFD's default `deviceClassWhitelist` is `["0e","ef","fe","ff"]` and does
+not include `02`, so the default configuration emits no label for this device. On
 whichever node holds the dongle it emits:
 
 ```
-feature.node.kubernetes.io/usb-ff_1a86_55d4.present=true
+feature.node.kubernetes.io/usb-02_1a86_55d4.present=true
 ```
 
 The HA `nodeSelector` keys off exactly that label. Because the label is *derived from

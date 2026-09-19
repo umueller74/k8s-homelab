@@ -1,0 +1,60 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: node-feature-discovery
+  namespace: node-feature-discovery
+
+spec:
+  interval: 30m
+
+  chart:
+    spec:
+      chart: node-feature-discovery
+      version: "0.19.x"
+      sourceRef:
+        kind: HelmRepository
+        name: node-feature-discovery
+        namespace: flux-system
+
+  values:
+    worker:
+      config:
+        # No `core:` block. NFD 0.19's keys are core.featureSources and
+        # core.labelSources (not core.sources), and both already default to
+        # [all] - which includes usb. Naming a non-existent key here would
+        # be ignored at best, and an explicit list would only narrow what
+        # already works.
+        sources:
+          usb:
+            # NFD's default deviceClassWhitelist is ["0e","ef","fe","ff"].
+            # The SONOFF ZBDongle-P V2 (1a86:55d4) reports bDeviceClass 02
+            # (CDC), so without "02" here NFD emits no label for it at all
+            # and the Home Assistant nodeSelector never matches.
+            deviceClassWhitelist:
+              - "02"
+              - "0e"
+              - "ef"
+              - "fe"
+              - "ff"
+            deviceLabelFields:
+              - class
+              - vendor
+              - device
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
+
+    master:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
+
+    gc:
+      enable: true
