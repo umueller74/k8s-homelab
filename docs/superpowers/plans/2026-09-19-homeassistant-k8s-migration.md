@@ -1019,10 +1019,24 @@ Expected: `no NFD labels`. This is the "failing test".
 ```bash
 mkdir -p infrastructure/node-feature-discovery
 cat > infrastructure/node-feature-discovery/namespace.yaml <<'EOF'
+# The nfd-worker DaemonSet mounts eight hostPath volumes (/sys, /boot,
+# /etc/os-release, /usr/lib, /lib ...) to read hardware features. Talos
+# enforces PodSecurity "baseline" in every namespace except kube-system, and
+# baseline forbids hostPath volumes, so this namespace must be labelled
+# privileged -- the same convention metallb-system, longhorn-system,
+# monitoring and cni-plugins already use in this repo.
+#
+# Without these labels the failure is SILENT: the DaemonSet is created and
+# Flux reports Ready, because enforcement applies to pods, not workload
+# templates. Only the pods are rejected, so `rollout status` simply hangs.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: node-feature-discovery
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
 EOF
 
 cat > infrastructure/node-feature-discovery/helmrepository.yaml <<'EOF'
@@ -1202,6 +1216,11 @@ virtio and QEMU devices:
 ```bash
 flux reconcile kustomization infrastructure --with-source
 kubectl -n node-feature-discovery rollout status ds/node-feature-discovery-worker --timeout=5m
+
+# If rollout status hangs, check for silent PodSecurity rejection before
+# anything else - it is the most likely cause and produces no pod to inspect:
+kubectl -n node-feature-discovery get events --sort-by=.lastTimestamp | grep -i forbidden || echo "no PodSecurity rejections"
+kubectl -n node-feature-discovery get ds node-feature-discovery-worker -o jsonpath='desired={.status.desiredNumberScheduled} ready={.status.numberReady}{"\n"}'
 kubectl get nodes -o json | python3 -c "
 import sys, json
 for n in json.load(sys.stdin)['items']:
