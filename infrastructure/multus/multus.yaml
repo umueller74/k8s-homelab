@@ -170,13 +170,24 @@ spec:
         - name: kube-multus
           image: ghcr.io/k8snetworkplumbingwg/multus-cni:v4.3.1-thick
           command: [ "/usr/src/multus-cni/bin/multus-daemon" ]
+          # Upstream ships 100m/50Mi for both requests and limits. Those are
+          # thin-plugin values; this is the THICK daemon, which is long-lived
+          # and services every CNI request on the node, so it needs far more.
+          #
+          # At 50Mi it was OOM-killed (exit 137) mid-CNI-operation, which
+          # containerd reports as `netplugin failed ... signal: killed`, and
+          # the 100m CPU cap throttled ADD past containerd's timeout. Between
+          # them no pod on any node could get a sandbox: 35 pods stuck
+          # ContainerCreating and the Flux controllers down for ~11h.
+          #
+          # No CPU limit on purpose - throttling a CNI daemon turns a slow
+          # node into a broken one. The request still reserves its share.
           resources:
             requests:
               cpu: "100m"
-              memory: "50Mi"
+              memory: "128Mi"
             limits:
-              cpu: "100m"
-              memory: "50Mi"
+              memory: "512Mi"
           securityContext:
             privileged: true
           terminationMessagePolicy: FallbackToLogsOnError
