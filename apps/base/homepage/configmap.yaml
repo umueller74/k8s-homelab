@@ -84,14 +84,12 @@ data:
                 password: 4om3p@gePassw0rd
 
         - Home Assistant:
-            href: http://192.168.1.28:8123/
+            href: https://homeassistant.homelab.cs-ol.de/
             description: Automate your home
             icon: home-assistant.png
-            server: docker-lab1
-            container: homeassistant
             widget:
                 type: homeassistant
-                url: http://192.168.1.28:8123
+                url: http://homeassistant.homeassistant.svc.cluster.local:8123
                 key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMjc1MjA1ZWJiMTE0ZWQzYWRmZmI2NmJjOTEyMjJiNyIsImlhdCI6MTc2NDUwODkxNCwiZXhwIjoyMDc5ODY4OTE0fQ.dMsrNydPd0ZSEpD3U-nJyHcCZp_bP0PAGc8ynIVnvzY
 
         - Paperless:

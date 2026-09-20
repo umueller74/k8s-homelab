@@ -1,0 +1,32 @@
+# Production pins Home Assistant to the node that actually holds the Zigbee
+# dongle. The label is published by Node Feature Discovery from the attached
+# USB device, so moving the passthrough to another node moves the workload
+# with it - no manifest change needed.
+#
+# Device class 02 is CDC, read from the dongle's bDeviceClass. It is not in
+# NFD's default whitelist; see infrastructure/node-feature-discovery.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homeassistant
+  namespace: homeassistant
+spec:
+  template:
+    spec:
+      nodeSelector:
+        feature.node.kubernetes.io/usb-02_1a86_55d4.present: "true"
+      containers:
+        - name: homeassistant
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: zigbee
+              mountPath: /dev/zigbee
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: homeassistant-config
+        - name: zigbee
+          hostPath:
+            path: /dev/zigbee
+            type: CharDevice
