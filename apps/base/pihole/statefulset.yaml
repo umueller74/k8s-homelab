@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pihole
+  namespace: pihole
+spec:
+  replicas: 2
+
+  # Headless service giving each pod a stable DNS name, so nebula-sync can
+  # address pihole-0 and pihole-1 individually.
+  serviceName: pihole-headless
+
+  # Rolls one pod at a time: a bad image or config can never take out both
+  # replicas at once.
+  updateStrategy:
+    type: RollingUpdate
+
+  selector:
+    matchLabels:
+      app: pihole
+
+  template:
+    metadata:
+      labels:
+        app: pihole
+
+    spec:
+      # The two replicas must never share a node, otherwise losing that one
+      # node takes down DNS entirely. "required" rather than "preferred" so the
+      # scheduler cannot silently co-locate them under pressure.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: pihole
+              topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: pihole
+          image: pihole/pihole:2026.09.0
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          env:
+            - name: TZ
+              value: Europe/Amsterdam
+
+            - name: FTLCONF_webserver_api_password
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secret
+                  key: password
+
+            - name: FTLCONF_LOCAL_IPV4
+              value: '192.168.3.10'
+
+            - name: FTLCONF_dns_listeningMode
+              value: 'all'
+
+            - name: FTLCONF_dns_upstreams
+              value: '10.98.0.1'
+
+          ports:
+            - name: http
+              containerPort: 80
+
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+
+          # Probe DNS, not the web UI: an FTL whose resolver is wedged while
+          # lighttpd still answers would otherwise stay Ready and keep MetalLB
+          # announcing the VIP from a node that cannot resolve anything.
+          #
+          # dig exits 0 whenever FTL replies at all (including NXDOMAIN or
+          # SERVFAIL) and 9 when it does not reply, so this tests FTL liveness
+          # without failing when the upstream resolver is unreachable.
+          readinessProbe:
+            exec:
+              command:
+                ['dig', '+short', '+time=2', '+tries=1', '@127.0.0.1', 'pi.hole']
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+
+          livenessProbe:
+            exec:
+              command:
+                ['dig', '+short', '+time=2', '+tries=1', '@127.0.0.1', 'pi.hole']
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+
+          volumeMounts:
+            - name: config
+              mountPath: /etc/pihole
+
+  # Each replica gets its own volume. A single ReadWriteOnce Longhorn volume
+  # cannot be mounted by two pods on different nodes, and two FTL processes
+  # writing one gravity.db/pihole-FTL.db would corrupt them.
+  volumeClaimTemplates:
+    - metadata:
+        name: config
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 2Gi
