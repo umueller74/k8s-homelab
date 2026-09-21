@@ -9,4 +9,5 @@ resources:
   - service-web.yaml
   - service-headless.yaml
   - nebula-sync.yaml
+  - backup.yaml
   - ingress.yaml
