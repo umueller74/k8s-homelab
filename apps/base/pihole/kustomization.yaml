@@ -4,8 +4,9 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - pvc.yaml
-  - deployment.yaml
+  - statefulset.yaml
   - service-dns.yaml
   - service-web.yaml
+  - service-headless.yaml
+  - nebula-sync.yaml
   - ingress.yaml

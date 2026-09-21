@@ -1,0 +1,20 @@
+# Per-pod DNS names (pihole-0.pihole-headless.pihole.svc.cluster.local) so
+# nebula-sync can address each replica individually. Not used for client DNS
+# traffic -- that goes through the pihole-dns LoadBalancer VIP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-headless
+  namespace: pihole
+spec:
+  clusterIP: None
+  # Keep pod names resolvable while a replica is NotReady, so nebula-sync can
+  # still seed or repair it.
+  publishNotReadyAddresses: true
+  selector:
+    app: pihole
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80

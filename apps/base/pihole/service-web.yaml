@@ -1,3 +1,15 @@
+# Pinned to pihole-0 rather than selecting both replicas.
+#
+# The UI cannot be made to follow whichever pod MetalLB is currently announcing
+# the DNS VIP from: Traefik reaches this Service cluster-internally (so
+# externalTrafficPolicy does not apply) and MetalLB elects an announcer per
+# Service independently, so pihole-web and pihole-dns need not agree. Selecting
+# both replicas would therefore round-robin the dashboard and make the Homepage
+# widget's query counts jump between instances.
+#
+# Pinning gives one predictable dashboard. Note it shows pihole-0's own
+# statistics, which are not the whole picture when pihole-1 is the pod serving
+# DNS -- nebula-sync replicates configuration, not query logs.
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,6 +19,7 @@ spec:
   type: LoadBalancer
   selector:
     app: pihole
+    statefulset.kubernetes.io/pod-name: pihole-0
   ports:
     - name: http
       protocol: TCP

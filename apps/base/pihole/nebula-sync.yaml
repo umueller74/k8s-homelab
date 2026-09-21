@@ -1,0 +1,104 @@
+# Replicates config, adlists, groups, clients and local DNS records from
+# pihole-0 to pihole-1 over the Pi-hole v6 API. Without this the standby
+# replica drifts away from the active one and a failover would serve a
+# different blocklist. (gravity-sync is Pi-hole v5 only.)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nebula-sync
+  namespace: pihole
+spec:
+  schedule: '0 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: OnFailure
+
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            fsGroup: 1001
+            seccompProfile:
+              type: RuntimeDefault
+
+          # PRIMARY/REPLICAS embed the API password, so they cannot live in a
+          # manifest. Render them at runtime from the existing pihole-secret
+          # and hand them to nebula-sync via its *_FILE inputs. The nebula-sync
+          # image is built FROM scratch and has no shell, hence the initContainer.
+          initContainers:
+            - name: render-targets
+              image: busybox:1.37
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  printf '%s' "http://pihole-0.pihole-headless.pihole.svc.cluster.local|${PIHOLE_PASSWORD}" > /targets/primary
+                  printf '%s' "http://pihole-1.pihole-headless.pihole.svc.cluster.local|${PIHOLE_PASSWORD}" > /targets/replicas
+              env:
+                - name: PIHOLE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pihole-secret
+                      key: password
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ['ALL']
+              volumeMounts:
+                - name: targets
+                  mountPath: /targets
+
+          containers:
+            - name: nebula-sync
+              image: ghcr.io/lovelaze/nebula-sync:v0.11.2
+
+              env:
+                - name: PRIMARY_FILE
+                  value: /targets/primary
+                - name: REPLICAS_FILE
+                  value: /targets/replicas
+                # Full Teleporter export/import: the standby is an exact copy.
+                - name: FULL_SYNC
+                  value: 'true'
+                # Rebuild the replica's gravity.db after import so its
+                # blocklists are actually in effect, not just listed.
+                - name: RUN_GRAVITY
+                  value: 'true'
+                - name: TZ
+                  value: Europe/Amsterdam
+                # CRON deliberately unset: nebula-sync then syncs once and
+                # exits, leaving scheduling to this CronJob where it is visible
+                # to kubectl and Prometheus.
+
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ['ALL']
+
+              volumeMounts:
+                - name: targets
+                  mountPath: /targets
+                  readOnly: true
+
+          volumes:
+            - name: targets
+              emptyDir:
+                medium: Memory

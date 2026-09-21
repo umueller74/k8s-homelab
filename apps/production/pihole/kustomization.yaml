@@ -5,5 +5,5 @@ resources:
   - ../../base/pihole
 
 patches:
-  - path: deployment-patch.yaml
+  - path: statefulset-patch.yaml
   - path: service-patch.yaml
