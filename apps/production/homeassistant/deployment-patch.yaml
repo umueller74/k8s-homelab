@@ -17,6 +17,24 @@ spec:
         feature.node.kubernetes.io/usb-02_1a86_55d4.present: "true"
       containers:
         - name: homeassistant
+          # A hostPath CharDevice mount only places the device *node* in the
+          # container filesystem. It does not add the device to the container's
+          # cgroup v2 eBPF device filter, so open() returns EPERM even for uid 0
+          # - verified in this cluster:
+          #
+          #   open("/dev/null")   -> OK        (on runc's default allowlist)
+          #   open("/dev/zigbee") -> EPERM     (166:0 is not)
+          #
+          # The failure surfaces far from the cause: ZHA just reports "failed to
+          # connect" and the obvious suspect is the serial port speed.
+          #
+          # Kubernetes has no per-container devices: field. The only ways to
+          # populate runc's allowlist are a device plugin or privileged. One
+          # dongle does not justify another DaemonSet.
+          #
+          # This supersedes the base manifest's NET_ADMIN/NET_RAW adds.
+          securityContext:
+            privileged: true
           volumeMounts:
             - name: config
               mountPath: /config
