@@ -1,0 +1,135 @@
+# Pins the NAS host key so the backup cannot be silently redirected to another
+# host. Public key material, safe to commit. Refresh with:
+#   ssh-keyscan -t rsa 192.168.1.240
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pihole-backup-known-hosts
+  namespace: pihole
+data:
+  known_hosts: |
+    192.168.1.240 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDEgmfWaeLMCD53RLIVoaszI1ujimBf0eAko7mQ5QN1PItNmdg8BNdWaPeUwKerz/whUpFtpfvv8BUOB/e4VIDU/mJvci32i5+2rHj/IMeV23201m3XIqHgxJkfQ1zO182caHQa0d9bf9WUXUzSfjGXEZiGNrkG6S4DyzmixQaROtnuP3rdhxO0fq7lS7y/zWSU1m4PfSrsQyJ60kJ1Tx+6QwBVBv2XOhweqzAqKPcRvwE8z69NzMJw+9kAJMVQ7nX1i5eHVtd1VnUWL/QUQ8kRcxQCPlciVL4GFuEVYOLlBVlJVwWwBf2LQ5hbsWyouvsvbjunmhK0UmR7xcfyq5J
+---
+# Daily Teleporter export of pihole-0, copied to the NAS over scp.
+#
+# Backs up pihole-0 specifically: it is deterministic (unlike "whichever pod
+# MetalLB currently announces") and is already nebula-sync's sync primary, so it
+# is the authoritative copy of the configuration.
+#
+# Uses the Teleporter HTTP API rather than the CLI. The CLI would need a pod
+# mounting config-pihole-0, but that PVC is ReadWriteOnce and already attached
+# to pihole-0's node, so a backup pod scheduled elsewhere could not attach it.
+# The API returns the identical archive with no volume or node constraint.
+# (Note: 'pihole -a -t' is Pi-hole v5 syntax -- on v6 it silently falls through
+# to the usage text and exits 0 without producing a backup.)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pihole-backup
+  namespace: pihole
+spec:
+  schedule: '30 3 * * *'
+  timeZone: Europe/Amsterdam
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+
+          containers:
+            - name: backup
+              image: alpine:3.22
+
+              env:
+                - name: PIHOLE_HOST
+                  value: pihole-0.pihole-headless.pihole.svc.cluster.local
+                - name: NAS_HOST
+                  value: '192.168.1.240'
+                - name: NAS_PATH
+                  value: /share/MD0_DATA/Backup/pihole
+                - name: PIHOLE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pihole-secret
+                      key: password
+                - name: NAS_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: pihole-backup-nas
+                      key: username
+                # sshpass -e reads the password from SSHPASS, keeping it out of
+                # the command line and therefore out of the process list.
+                - name: SSHPASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: pihole-backup-nas
+                      key: password
+
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  apk add --no-cache curl openssh-client sshpass >/dev/null
+
+                  OUT="/tmp/pihole-teleporter-$(date +%Y-%m-%d).zip"
+
+                  # Authenticate over stdin so the password never becomes a curl argument.
+                  SID=$(printf '{"password":"%s"}' "$PIHOLE_PASSWORD" \
+                    | curl -sf -X POST "http://${PIHOLE_HOST}/api/auth" \
+                        -H 'Content-Type: application/json' --data-binary @- \
+                    | sed -n 's/.*"sid":"\([^"]*\)".*/\1/p')
+                  [ -n "$SID" ] || { echo "FATAL: Pi-hole API authentication failed" >&2; exit 1; }
+
+                  curl -sf -o "$OUT" -H "sid: $SID" "http://${PIHOLE_HOST}/api/teleporter"
+
+                  # Refuse to ship a truncated or error-page "backup".
+                  MAGIC=$(od -An -c -N2 "$OUT" | tr -d ' \n')
+                  SIZE=$(wc -c < "$OUT")
+                  [ "$MAGIC" = "PK" ] || { echo "FATAL: not a zip archive (magic=$MAGIC)" >&2; exit 1; }
+                  [ "$SIZE" -gt 1000 ] || { echo "FATAL: archive implausibly small ($SIZE bytes)" >&2; exit 1; }
+
+                  # -O forces the legacy scp protocol: the NAS runs OpenSSH 7.6.
+                  # HostKeyAlgorithms/PubkeyAcceptedAlgorithms re-enable ssh-rsa,
+                  # which modern clients disable by default and which is the only
+                  # host key type this NAS offers.
+                  sshpass -e scp -O \
+                    -o UserKnownHostsFile=/etc/nas/known_hosts \
+                    -o StrictHostKeyChecking=yes \
+                    -o HostKeyAlgorithms=+ssh-rsa \
+                    -o PubkeyAcceptedAlgorithms=+ssh-rsa \
+                    "$OUT" "${NAS_USER}@${NAS_HOST}:${NAS_PATH}/"
+
+                  echo "Backed up $(basename "$OUT") ($SIZE bytes) to ${NAS_HOST}:${NAS_PATH}"
+
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ['ALL']
+
+              volumeMounts:
+                - name: known-hosts
+                  mountPath: /etc/nas
+                  readOnly: true
+
+          volumes:
+            - name: known-hosts
+              configMap:
+                name: pihole-backup-known-hosts
