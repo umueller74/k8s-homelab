@@ -22,8 +22,9 @@ spec:
   values:
     # Default settings for Longhorn
     defaultSettings:
-      # Number of replicas for each volume
-      defaultReplicaCount: 3
+      # Number of replicas for each volume. 2, not 3: all replicas share
+      # pve2's single NVMe, so a third copy only adds write load (#92).
+      defaultReplicaCount: 2
       # Percentage of storage that can be allocated relative to disk capacity
       storageOverProvisioningPercentage: 200
       # Minimum available disk capacity percentage before a disk becomes unschedulable
@@ -46,7 +47,7 @@ spec:
       # Set Longhorn as the default storage class
       defaultClass: true
       defaultFsType: ext4
-      defaultClassReplicaCount: 3
+      defaultClassReplicaCount: 2
       reclaimPolicy: Delete
     # Longhorn UI configuration
     longhornUI:
