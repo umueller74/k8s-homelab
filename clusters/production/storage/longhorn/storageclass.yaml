@@ -6,9 +6,12 @@ metadata:
   annotations:
     # Not the default storage class - the HelmRelease creates the default one
     storageclass.kubernetes.io/is-default-class: 'false'
+    # StorageClass parameters are immutable; let Flux recreate the class
+    # when they change. Existing PVs are not affected.
+    kustomize.toolkit.fluxcd.io/force: enabled
 parameters:
   # Number of replicas for volumes using this class
-  numberOfReplicas: '3'
+  numberOfReplicas: '2'
   # Enable data locality for better performance
   dataLocality: 'best-effort'
   # Filesystem type
