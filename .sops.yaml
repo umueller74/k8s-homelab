@@ -1,0 +1,12 @@
+# SOPS configuration - encrypts Kubernetes Secrets with age.
+#
+# Only files named *.sops.yaml are encrypted, and only their data/stringData
+# fields, so metadata stays readable in diffs. Flux decrypts them with the
+# private key stored in the cluster as Secret flux-system/sops-age.
+#
+# Encrypt a new secret in place:  sops --encrypt --in-place <file>.sops.yaml
+# Edit an encrypted secret:       sops <file>.sops.yaml
+creation_rules:
+  - path_regex: .*\.sops\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
