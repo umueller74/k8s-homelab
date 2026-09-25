@@ -1,0 +1,53 @@
+# Postfix relay for outgoing mail from in-cluster apps.
+#
+# Apps send plain SMTP without authentication to
+# smtp-relay.smtp-relay.svc.cluster.local:587. The relay authenticates to the
+# upstream server, so its credentials live in exactly one place.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: smtp-relay
+  namespace: smtp-relay
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: mail
+      version: '5.x.x'
+      sourceRef:
+        kind: HelmRepository
+        name: bokysan
+        namespace: flux-system
+  values:
+    fullnameOverride: smtp-relay
+
+    config:
+      general:
+        TZ: Europe/Berlin
+        RELAYHOST: '[mail.cs-ol.de]:587'
+        RELAYHOST_USERNAME: kubernetes@cs-ol.de
+        # Refuse to relay mail from senders outside the upstream's domain.
+        ALLOWED_SENDER_DOMAINS: cs-ol.de
+      postfix:
+        myhostname: smtp-relay.homelab.cs-ol.de
+        # Require STARTTLS and verify the upstream certificate (*.cs-ol.de);
+        # the image default "may" would fall back to sending the password in
+        # the clear.
+        smtp_tls_security_level: secure
+        smtp_tls_CAfile: /etc/ssl/certs/ca-certificates.crt
+
+    # RELAYHOST_PASSWORD, from the SOPS-encrypted Secret in the overlay
+    existingSecret: smtp-relay-credentials
+
+    # Mail queue - keeps undelivered mail across restarts and upstream outages
+    persistence:
+      enabled: true
+      storageClass: longhorn
+      size: 1Gi
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

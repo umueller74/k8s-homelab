@@ -247,4 +247,21 @@ spec:
 
 ## Secrets Management
 
-Secrets are currently stored as plain Kubernetes Secret manifests in the repository. Consider migrating to sealed-secrets or SOPS for sensitive data encryption at rest.
+This repository is **public**. New secrets must be encrypted with SOPS (age); older ones are still plain Secret manifests and should be migrated.
+
+- `.sops.yaml` encrypts only `data`/`stringData` of files named `*.sops.yaml`
+- The age private key lives in `~/.config/sops/age/keys.txt` on the admin workstation and in the cluster as Secret `flux-system/sops-age` — never in Git. Losing it means re-creating every encrypted secret, so keep a backup.
+- Encrypt: write the Secret as `<name>.sops.yaml`, then `sops --encrypt --in-place <name>.sops.yaml`
+- Edit: `sops <name>.sops.yaml`
+- The Flux Kustomization applying the file needs decryption enabled:
+  ```yaml
+  spec:
+    decryption:
+      provider: sops
+      secretRef:
+        name: sops-age
+  ```
+
+## Outgoing Mail
+
+Apps send mail through the Postfix relay (`apps/base/smtp-relay`) at `smtp-relay.smtp-relay.svc.cluster.local:587` — plain SMTP, no authentication, sender must be `@cs-ol.de`. The relay authenticates to `mail.cs-ol.de:587` as `kubernetes@cs-ol.de`.
