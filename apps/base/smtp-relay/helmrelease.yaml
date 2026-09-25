@@ -35,6 +35,11 @@ spec:
         # the clear.
         smtp_tls_security_level: secure
         smtp_tls_CAfile: /etc/ssl/certs/ca-certificates.crt
+        # Send SNI - without it the shared cPanel host presents its default
+        # certificate (cp141.sp-server.net) and verification fails.
+        smtp_tls_servername: nexthop
+        # The cluster has no IPv6 route; skip the AAAA record.
+        inet_protocols: ipv4
 
     # RELAYHOST_PASSWORD, from the SOPS-encrypted Secret in the overlay
     existingSecret: smtp-relay-credentials
