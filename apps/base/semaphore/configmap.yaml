@@ -1,0 +1,10 @@
+# Extra Python packages for Ansible runs. The image pip-installs this file at
+# startup.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: semaphore-requirements
+  namespace: semaphore
+data:
+  requirements.txt: |
+    uptime-kuma-api

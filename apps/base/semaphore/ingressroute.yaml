@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: semaphore
+  namespace: semaphore
+  annotations:
+    gethomepage.dev/href: 'https://semaphore.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Ansible Semaphore
+    gethomepage.dev/group: Primary Services
+    gethomepage.dev/icon: semaphore.png
+    gethomepage.dev/app: semaphore
+    gethomepage.dev/name: Ansible Semaphore
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '10'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`semaphore.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: semaphore
+          port: 80
+  tls: {}
