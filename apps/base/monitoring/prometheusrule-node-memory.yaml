@@ -1,0 +1,25 @@
+# Early warning for node memory while the lab1/lab2/lab3 services move into
+# the cluster (#107). The chart's NodeMemoryHighUtilization only fires at 90 %,
+# which leaves little room on the 8 GiB nodes.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: node-memory-early-warning
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: node-memory-early-warning
+      rules:
+        - alert: NodeMemoryEarlyWarning
+          expr: |
+            100 - (node_memory_MemAvailable_bytes{job="node-exporter"} / node_memory_MemTotal_bytes{job="node-exporter"} * 100) > 80
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Node memory above 80 % for 15 minutes
+            description: >-
+              {{ $labels.instance }} has used {{ printf "%.0f" $value }} % of its
+              memory for 15 minutes. Check before migrating more services (#107).

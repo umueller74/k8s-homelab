@@ -6,6 +6,7 @@ resources:
   - helmrepository.yaml
   - helmrelease.yaml
   - podmonitor-flux.yaml
+  - prometheusrule-node-memory.yaml
   - dashboard-cluster-overview.yaml
   - dashboard-cluster-detailed.yaml
   - dashboard-node-psi.yaml
