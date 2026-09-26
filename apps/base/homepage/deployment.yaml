@@ -43,6 +43,11 @@ spec:
                   fieldPath: status.podIP
             - name: HOMEPAGE_ALLOWED_HOSTS
               value: '$(MY_POD_IP):3000,homepage.homelab.cs-ol.de' # See gethomepage.dev/installation/#homepage_allowed_hosts . Value before the comma is required for the k8s probe
+          # Widget credentials, substituted into the config as {{HOMEPAGE_VAR_*}}.
+          # The Secret is SOPS-encrypted in apps/production/homepage.
+          envFrom:
+            - secretRef:
+                name: homepage-credentials
           ports:
             - name: http
               containerPort: 3000

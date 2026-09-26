@@ -81,8 +81,7 @@ data:
                 type: unifi
                 url: https://192.168.0.1
                 username: homepage
-                password: 4om3p@gePassw0rd
-
+                password: '{{HOMEPAGE_VAR_UNIFI_PASSWORD}}'
         - Paperless:
             href: http://192.168.1.28:8001/
             icon: paperless.png
@@ -92,8 +91,7 @@ data:
                 type: paperlessngx
                 url: http://192.168.1.28:8001/
                 username: mueller
-                password: 'Mu5Pbm3M!'
-
+                password: '{{HOMEPAGE_VAR_PAPERLESS_PASSWORD}}'
         - PiHole:
             href: http://192.168.1.29:3180/admin
             server: docker-lab2
@@ -103,8 +101,7 @@ data:
                 type: pihole
                 url: http://192.168.1.29:3180
                 version: 6
-                key: m73ytQBhQcHMRwNE28DiAPCcSevPeRbOOwdB0WDPo9k=
-
+                key: '{{HOMEPAGE_VAR_PIHOLE_KEY}}'
         - Proxmox Macmini:
             href: https://192.168.1.27:8006/
             icon: proxmox.png
@@ -112,7 +109,7 @@ data:
                 type: proxmox
                 url: https://192.168.1.27:8006
                 username: root@pam!homepage
-                password: c1337400-bccc-43fe-abd9-3e73e862cc4b
+                password: '{{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}'
                 cluster: homelab
 
         - Proxmox Acemagic:
@@ -142,7 +139,7 @@ data:
                 type: beszel
                 url: http://192.168.1.29:8099
                 username: info@cs-ol.de
-                password: Mu5Pbm3M!
+                password: '{{HOMEPAGE_VAR_BESZEL_PASSWORD}}'
                 version: 2 # optional, default is 1
 
         - 'Uptime Kuma':
@@ -165,8 +162,7 @@ data:
                 type: npm
                 url: http://192.168.0.54:8081
                 username: info@cs-ol.de
-                password: Mu5Pbm3M!
-
+                password: '{{HOMEPAGE_VAR_NPM_INTERN_PASSWORD}}'
         - NGINX Proxy Manager - EXTERN:
             href: http://10.7.0.9:8081/
             icon: nginx-proxy-manager.png
@@ -176,8 +172,7 @@ data:
                 type: npm
                 url: http://10.7.0.9:8081
                 username: info@cs-ol.de
-                password: Mu5Pbm3M!
-
+                password: '{{HOMEPAGE_VAR_NPM_EXTERN_PASSWORD}}'
         - QNAP:
             href: http://192.168.1.240/
             siteMonitor: http://192.168.1.240/
@@ -186,8 +181,7 @@ data:
                 type: qnap
                 url: http://192.168.1.240:8080
                 username: mueller
-                password: 'Mu5Pbm3M!'
-
+                password: '{{HOMEPAGE_VAR_QNAP_PASSWORD}}'
     - Prometheus Stack:
         - Prometheus:
             href: http://192.168.1.28:9090/
@@ -220,8 +214,7 @@ data:
             widget:
                 type: octoprint
                 url: http://192.168.1.177
-                key: FdjL_Bj8BtjDzGvcl5vrl__zaaWn_hWrvFW85aGABmY
-
+                key: '{{HOMEPAGE_VAR_OCTOPRINT_KEY}}'
         - ESPHome:
             href: http://192.168.1.28:6052/
             icon: esphome.png
@@ -231,8 +224,7 @@ data:
                 type: esphome
                 url: http://192.168.1.28:6052
                 username: admin
-                password: Mu5Pbm3M!
-
+                password: '{{HOMEPAGE_VAR_ESPHOME_PASSWORD}}'
         - TasmoAdmin:
             href: http://192.168.1.28:8000/
             icon: tasmoadmin.png
@@ -264,8 +256,7 @@ data:
                 alerts: grafana
                 url: http://192.168.1.28:3001
                 username: admin
-                password: Mu5Pbm3M!
-
+                password: '{{HOMEPAGE_VAR_GRAFANA_PASSWORD}}'
         - NTFY:
             href: https://ntfy.meatweb2.duckdns.org/
             siteMonitor: https://ntfy.meatweb2.duckdns.org/
@@ -363,6 +354,4 @@ data:
     pve:
       url: https://192.168.1.27:8006
       token: root@pam!homepage
-      secret: c1337400-bccc-43fe-abd9-3e73e862cc4b
-
-
+      secret: '{{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}'
