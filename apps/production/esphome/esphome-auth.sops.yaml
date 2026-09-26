@@ -1,0 +1,25 @@
+# ESPHome dashboard login (USERNAME/PASSWORD), carried over from lab1.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: esphome-auth
+    namespace: esphome
+type: Opaque
+stringData:
+    username: ENC[AES256_GCM,data:qliQjM0=,iv:EpI6D20yPpTYyhtrgz0y/p3uFpNaQf9Oo4UTvLVfy9Q=,tag:NtTjJScLKtooYyIXi4x9XQ==,type:str]
+    password: ENC[AES256_GCM,data:RMPkGIkB+XlB,iv:7s6+ZWykbAVtgqofoMPLgoxXl92V5syDLlef8Y4P6Xg=,tag:WhKkpCyM7bdMy3AwbBo6Ng==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBTZnp5ZDc5KzMxaS9XYWhh
+            L3d0Y2ZhakQvYXptNWdTcGpJTHFmckRsRmdzCkJHVHR0QWJNMms5MjZ2ZnNoWmkr
+            OUYzNE81MS9UVHNJS2xHN0l0eVF1L3cKLS0tIHNlLzVTNGJuT3E0djBLK3Fpd0VF
+            SXlrSW03R1MyTlBSaXlZaFc2S3pjdGsK1WZPB1PKkNnXw9rvP/DxwfYjNaxF4CHQ
+            opnFiGYMWoac1FVI+1+tzIYrNUFQ//It7SyzBRQfF/5aLMMmzdTW3A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-09-26T13:07:03Z"
+    mac: ENC[AES256_GCM,data:Q60uSWCfQfJtbm0QebjnXsippZjVIwIY/lVbJSnrBmIyckn1vzudZH/o8l/ZkCfLQqWEIDbj9lRvwmmzi9ingjLOepN0iiG3lWxhXNdAJtIbRhexYqdZzRwMmq9sAbKCdSUzQi1A8bc/GzwC33JBLiBp6zgN10MJsztncQw/XMw=,iv:ug00a+BTcvHMZ8F2qWkrC05pUXIq9NKfEx9iYqLecMM=,tag:JYkC+pmBswhDiGxPckyQNg==,type:str]
+    version: 3.13.3

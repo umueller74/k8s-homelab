@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esphome
+  namespace: esphome
+spec:
+  replicas: 1
+
+  # One pod owns the static macvlan address and the RWO volume.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: esphome
+
+  template:
+    metadata:
+      labels:
+        app: esphome
+      annotations:
+        k8s.v1.cni.cncf.io/networks: esphome/lan-macvlan
+
+    spec:
+      containers:
+        - name: esphome
+          image: esphome/esphome:2026.4.3
+          args:
+            - dashboard
+            - /config
+
+          env:
+            - name: TZ
+              value: Europe/Berlin
+            # Dashboard login. Without these the dashboard is open to anyone
+            # who can reach it - and it can flash firmware.
+            - name: USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: esphome-auth
+                  key: username
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: esphome-auth
+                  key: password
+
+          ports:
+            - name: http
+              containerPort: 6052
+
+          # Compiling firmware (PlatformIO) is the peak: well over 1 GiB for
+          # ESP32 targets. Idle, the dashboard needs a fraction of that.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          volumeMounts:
+            - name: config
+              mountPath: /config
+
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: esphome-config

@@ -1,0 +1,17 @@
+# longhorn-retain, not the default longhorn class: an accidental Kustomization
+# delete must not take the device configs and secrets.yaml with it.
+#
+# Sized for the build cache, which ESPHome keeps under /config/.esphome
+# (build/ and platformio/) and which reached ~4 GB on lab1.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: esphome-config
+  namespace: esphome
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 10Gi
