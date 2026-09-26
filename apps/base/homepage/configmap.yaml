@@ -106,14 +106,6 @@ data:
             href: https://192.168.1.24:8006/
             icon: proxmox.png
 
-        - Gitea:
-            href: http://192.168.0.239/
-            icon: gitea.png
-            widget:
-                type: gitea
-                url: http://192.168.0.239
-                key: giteaapitoken
-
         - Ansible Semaphore:
             href: http://192.168.1.28:1200/
             icon: semaphore.png
@@ -264,10 +256,6 @@ data:
   docker.yaml: |
     docker-lab1:
       host: 192.168.1.28
-      port: 2375
-
-    docker-lab3:
-      host: 192.168.0.239
       port: 2375
 
     docker-raspi1:
