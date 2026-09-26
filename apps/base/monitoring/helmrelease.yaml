@@ -16,6 +16,9 @@ spec:
   values:
     prometheus:
       prometheusSpec:
+        # Used for the "Source" links in alerts; defaults to the in-cluster URL.
+        externalUrl: https://prometheus.homelab.cs-ol.de
+
         # Retention settings.
         #
         # retentionSize is the load-bearing one: time-based retention alone can
@@ -140,6 +143,8 @@ spec:
                 send_resolved: true
 
       alertmanagerSpec:
+        # Used for the links in notification emails; defaults to the in-cluster URL.
+        externalUrl: https://alertmanager.homelab.cs-ol.de
         storage:
           volumeClaimTemplate:
             spec:
