@@ -114,12 +114,6 @@ data:
                 url: http://192.168.0.239
                 key: giteaapitoken
 
-        - Ansible Semaphore:
-            href: http://192.168.1.28:1200/
-            icon: semaphore.png
-            server: docker-lab1
-            container: semaphore-semaphore-1
-
         - 'Uptime Kuma':
             href: http://10.7.0.9:3001/
             icon: uptime-kuma.png

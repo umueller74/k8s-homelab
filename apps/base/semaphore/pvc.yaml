@@ -1,0 +1,15 @@
+# longhorn-retain, not the default longhorn class: an accidental Kustomization
+# delete must not take the Semaphore database - and config.json with the key
+# that decrypts every stored credential - with it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: semaphore-data
+  namespace: semaphore
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 2Gi

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: semaphore
+  namespace: semaphore
+spec:
+  replicas: 1
+
+  # SQLite on a ReadWriteOnce volume: never run two pods at once.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: semaphore
+
+  template:
+    metadata:
+      labels:
+        app: semaphore
+
+    spec:
+      securityContext:
+        # The image runs as uid 1001. fsGroup makes the Longhorn volume
+        # writable for it.
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: semaphore
+          image: semaphoreui/semaphore:v2.16.43
+
+          env:
+            - name: SEMAPHORE_WEB_ROOT
+              value: https://semaphore.homelab.cs-ol.de
+            - name: SEMAPHORE_SCHEDULE_TIMEZONE
+              value: Europe/Berlin
+            - name: SEMAPHORE_DB_DIALECT
+              value: sqlite
+            - name: SEMAPHORE_USE_REMOTE_RUNNER
+              value: "False"
+
+          ports:
+            - name: http
+              containerPort: 3000
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+
+          livenessProbe:
+            httpGet:
+              path: /api/ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+          readinessProbe:
+            httpGet:
+              path: /api/ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/semaphore
+              subPath: data
+            # config.json lives here; it holds access_key_encryption.
+            - name: data
+              mountPath: /etc/semaphore
+              subPath: config
+            - name: requirements
+              mountPath: /etc/semaphore/requirements.txt
+              subPath: requirements.txt
+            # Repository checkouts, recreated on every task run.
+            - name: tmp
+              mountPath: /tmp/semaphore
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: semaphore-data
+        - name: requirements
+          configMap:
+            name: semaphore-requirements
+        - name: tmp
+          emptyDir: {}
