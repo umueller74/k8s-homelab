@@ -49,6 +49,12 @@ spec:
       defaultFsType: ext4
       defaultClassReplicaCount: 2
       reclaimPolicy: Delete
+      # Let filesystem trim reclaim space inside snapshots already marked
+      # removed - after a replica rebuild all data sits in such a system
+      # snapshot, out of reach of a plain trim (#100). Per class on purpose:
+      # the global removeSnapshotsDuringFilesystemTrim would also discard the
+      # daily snapshots of volumes on longhorn-retain.
+      unmapMarkSnapChainRemoved: enabled
     # Longhorn UI configuration
     longhornUI:
       replicas: 2
