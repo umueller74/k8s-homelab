@@ -192,13 +192,6 @@ data:
                 type: prometheus
                 url: http://192.168.1.28:9090
 
-        - Prometheus LOKI:
-            href: http://192.168.1.28:4100/
-            siteMonitor: http://192.168.1.28:4100/metrics
-            icon: loki.png
-            server: docker-lab1
-            container: loki
-
         - InfluxDB 2:
             href: http://192.168.1.28:8086/
             siteMonitor: http://192.168.1.28:8086/
@@ -238,13 +231,6 @@ data:
             container: wishlist-app
 
     - Monitoring:
-        - Observium:
-            href: http://192.168.1.28:8888/
-            description: Monitor the network devices
-            icon: observium.png
-            server: docker-lab1
-            container: observium-app-1
-
         - Grafana:
             href: http://192.168.1.28:3001/
             icon: grafana.png
