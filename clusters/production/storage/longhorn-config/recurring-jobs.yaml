@@ -30,3 +30,22 @@ spec:
   concurrency: 1
   labels:
     type: weekly
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: weekly-filesystem-trim
+  namespace: longhorn-system
+spec:
+  # Run weekly on Saturday at 3 AM, clear of the snapshot and backup jobs
+  cron: '0 3 * * 6'
+  task: filesystem-trim
+  # Every volume without its own recurring-job labels. homeassistant-config
+  # (daily-snapshot label) is deliberately not included.
+  groups:
+    - default
+  retain: 0
+  # One volume at a time - all replicas share pve2's NVMe with etcd (#100)
+  concurrency: 1
+  labels:
+    type: weekly
