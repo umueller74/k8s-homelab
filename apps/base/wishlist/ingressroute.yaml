@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wishlist
+  namespace: wishlist
+  annotations:
+    gethomepage.dev/href: 'https://wishlist.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Wishlist
+    gethomepage.dev/group: Primary Services
+    gethomepage.dev/icon: wishlist.png
+    gethomepage.dev/app: wishlist
+    gethomepage.dev/name: Wishlist
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '10'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`wishlist.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: wishlist
+          port: 80
+  tls: {}

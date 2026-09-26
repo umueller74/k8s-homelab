@@ -1,0 +1,27 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+
+metadata:
+  name: wishlist
+  namespace: flux-system
+
+spec:
+  interval: 10m
+
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+
+  path: ./apps/production/wishlist
+
+  prune: true
+  wait: true
+
+  # Decrypt *.sops.yaml Secrets with the age key in flux-system/sops-age
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+
+  dependsOn:
+    - name: infrastructure

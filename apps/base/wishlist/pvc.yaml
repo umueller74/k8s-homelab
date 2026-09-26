@@ -1,0 +1,14 @@
+# longhorn-retain, not the default longhorn class: an accidental Kustomization
+# delete must not take the wishlist database with it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wishlist-data
+  namespace: wishlist
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 1Gi

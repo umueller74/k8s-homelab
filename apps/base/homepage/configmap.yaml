@@ -185,12 +185,6 @@ data:
             server: docker-lab1
             container: tasmoadmin
 
-        - WishList:
-            href: http://192.168.1.28:3280/
-            icon: wishlist.png
-            server: docker-lab1
-            container: wishlist-app
-
     - Monitoring:
         - NTFY:
             href: https://ntfy.meatweb2.duckdns.org/

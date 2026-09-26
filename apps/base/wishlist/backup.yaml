@@ -1,0 +1,144 @@
+# Pins the NAS host key so the backup cannot be silently redirected to another
+# host. Public key material, safe to commit. Refresh with:
+#   ssh-keyscan -t rsa 192.168.1.240
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wishlist-backup-known-hosts
+  namespace: wishlist
+data:
+  known_hosts: |
+    192.168.1.240 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDEgmfWaeLMCD53RLIVoaszI1ujimBf0eAko7mQ5QN1PItNmdg8BNdWaPeUwKerz/whUpFtpfvv8BUOB/e4VIDU/mJvci32i5+2rHj/IMeV23201m3XIqHgxJkfQ1zO182caHQa0d9bf9WUXUzSfjGXEZiGNrkG6S4DyzmixQaROtnuP3rdhxO0fq7lS7y/zWSU1m4PfSrsQyJ60kJ1Tx+6QwBVBv2XOhweqzAqKPcRvwE8z69NzMJw+9kAJMVQ7nX1i5eHVtd1VnUWL/QUQ8kRcxQCPlciVL4GFuEVYOLlBVlJVwWwBf2LQ5hbsWyouvsvbjunmhK0UmR7xcfyq5J
+---
+# Nightly copy of the wishlist-data PVC to the NAS over scp.
+#
+# The PVC is ReadWriteOnce, which Kubernetes enforces per node, not per pod:
+# the podAffinity below puts this job on the node where the app pod already
+# has the volume attached, so both can mount it at the same time.
+#
+# SQLite files are not copied as-is: a file copy taken mid-write can be torn.
+# "sqlite3 .backup" takes a consistent snapshot through SQLite's own locking.
+# The volume is mounted read-write because SQLite needs to create its lock
+# (-shm) file even to read a database in WAL mode.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: wishlist-backup
+  namespace: wishlist
+spec:
+  schedule: '40 3 * * *'
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: wishlist
+                  topologyKey: kubernetes.io/hostname
+
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+
+          containers:
+            - name: backup
+              image: alpine:3.22
+
+              env:
+                - name: APP
+                  value: wishlist
+                # Space-separated, relative to the volume root.
+                - name: SQLITE_FILES
+                  value: data/prod.db
+                - name: KEEP
+                  value: '14'
+                - name: NAS_HOST
+                  value: '192.168.1.240'
+                - name: NAS_PATH
+                  value: /share/MD0_DATA/Backup/wishlist
+                - name: NAS_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: wishlist-backup-nas
+                      key: username
+                # sshpass -e reads the password from SSHPASS, keeping it out of
+                # the command line and therefore out of the process list.
+                - name: SSHPASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: wishlist-backup-nas
+                      key: password
+
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  apk add --no-cache openssh-client sshpass sqlite tar >/dev/null
+
+                  # UTC: alpine ships no tzdata, so file names carry UTC time.
+                  STAMP=$(date -u +%Y-%m-%d_%H%MZ)
+                  STAGE=/tmp/stage
+                  OUT="/tmp/${APP}-${STAMP}.tar.gz"
+                  mkdir -p "$STAGE"
+
+                  tar -C /data -cf - . | tar -C "$STAGE" -xf -
+                  for db in $SQLITE_FILES; do
+                    [ -f "/data/$db" ] || { echo "FATAL: /data/$db missing" >&2; exit 1; }
+                    sqlite3 "/data/$db" ".backup '$STAGE/$db'"
+                    sqlite3 "$STAGE/$db" 'PRAGMA integrity_check;' | grep -qx ok \
+                      || { echo "FATAL: integrity check failed for $db" >&2; exit 1; }
+                  done
+                  tar -C "$STAGE" -czf "$OUT" .
+
+                  SIZE=$(wc -c < "$OUT")
+                  [ "$SIZE" -gt 1000 ] || { echo "FATAL: archive implausibly small ($SIZE bytes)" >&2; exit 1; }
+
+                  # The NAS runs OpenSSH 7.6: -O forces the legacy scp protocol,
+                  # and ssh-rsa is the only host key type it offers.
+                  SSH_OPTS="-o UserKnownHostsFile=/etc/nas/known_hosts -o StrictHostKeyChecking=yes -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa"
+                  sshpass -e ssh $SSH_OPTS "${NAS_USER}@${NAS_HOST}" "mkdir -p '${NAS_PATH}'"
+                  sshpass -e scp -O $SSH_OPTS "$OUT" "${NAS_USER}@${NAS_HOST}:${NAS_PATH}/"
+
+                  # Keep the newest $KEEP archives of this app.
+                  sshpass -e ssh $SSH_OPTS "${NAS_USER}@${NAS_HOST}" \
+                    "cd '${NAS_PATH}' && ls -1t ${APP}-*.tar.gz | sed -n '$((KEEP + 1)),\$p' | while read -r f; do rm -f \"\$f\"; done"
+
+                  echo "Backed up $(basename "$OUT") ($SIZE bytes) to ${NAS_HOST}:${NAS_PATH}"
+
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+
+              securityContext:
+                allowPrivilegeEscalation: false
+
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: known-hosts
+                  mountPath: /etc/nas
+                  readOnly: true
+
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: wishlist-data
+            - name: known-hosts
+              configMap:
+                name: wishlist-backup-known-hosts
