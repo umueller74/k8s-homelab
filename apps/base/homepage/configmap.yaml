@@ -92,16 +92,6 @@ data:
                 url: http://192.168.1.28:8001/
                 username: mueller
                 password: '{{HOMEPAGE_VAR_PAPERLESS_PASSWORD}}'
-        - PiHole:
-            href: http://192.168.1.29:3180/admin
-            server: docker-lab2
-            container: pihole
-            icon: si-pihole-#96060C
-            widget:
-                type: pihole
-                url: http://192.168.1.29:3180
-                version: 6
-                key: '{{HOMEPAGE_VAR_PIHOLE_KEY}}'
         - Proxmox Macmini:
             href: https://192.168.1.27:8006/
             icon: proxmox.png
@@ -129,18 +119,6 @@ data:
             icon: semaphore.png
             server: docker-lab1
             container: semaphore-semaphore-1
-
-        - Beszel Monitoring:
-            href: http://192.168.1.29:8099/
-            icon: beszel.png
-            server: docker-lab2
-            container: beszel
-            widget:
-                type: beszel
-                url: http://192.168.1.29:8099
-                username: info@cs-ol.de
-                password: '{{HOMEPAGE_VAR_BESZEL_PASSWORD}}'
-                version: 2 # optional, default is 1
 
         - 'Uptime Kuma':
             href: http://10.7.0.9:3001/
@@ -286,10 +264,6 @@ data:
   docker.yaml: |
     docker-lab1:
       host: 192.168.1.28
-      port: 2375
-
-    docker-lab2:
-      host: 192.168.1.29
       port: 2375
 
     docker-lab3:
