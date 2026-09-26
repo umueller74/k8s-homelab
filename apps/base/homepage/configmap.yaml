@@ -106,14 +106,6 @@ data:
             href: https://192.168.1.24:8006/
             icon: proxmox.png
 
-        - Gitea:
-            href: http://192.168.0.239/
-            icon: gitea.png
-            widget:
-                type: gitea
-                url: http://192.168.0.239
-                key: giteaapitoken
-
         - 'Uptime Kuma':
             href: http://10.7.0.9:3001/
             icon: uptime-kuma.png
@@ -187,12 +179,6 @@ data:
             server: docker-lab1
             container: tasmoadmin
 
-        - WishList:
-            href: http://192.168.1.28:3280/
-            icon: wishlist.png
-            server: docker-lab1
-            container: wishlist-app
-
     - Monitoring:
         - NTFY:
             href: https://ntfy.meatweb2.duckdns.org/
@@ -258,10 +244,6 @@ data:
   docker.yaml: |
     docker-lab1:
       host: 192.168.1.28
-      port: 2375
-
-    docker-lab3:
-      host: 192.168.0.239
       port: 2375
 
     docker-raspi1:

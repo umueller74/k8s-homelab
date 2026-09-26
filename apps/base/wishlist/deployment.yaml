@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wishlist
+  namespace: wishlist
+spec:
+  replicas: 1
+
+  # SQLite on a ReadWriteOnce volume: never run two pods at once.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: wishlist
+
+  template:
+    metadata:
+      labels:
+        app: wishlist
+
+    spec:
+      containers:
+        - name: wishlist
+          image: ghcr.io/cmintey/wishlist:v0.64.1
+
+          env:
+            # Must match the URL users open, or login and CSRF checks fail.
+            - name: ORIGIN
+              value: https://wishlist.homelab.cs-ol.de
+            - name: TOKEN_TIME
+              value: "72"
+            - name: DEFAULT_CURRENCY
+              value: EUR
+            - name: LOG_LEVEL
+              value: info
+            - name: MAX_IMAGE_SIZE
+              value: "5000000"
+
+          ports:
+            - name: http
+              containerPort: 3280
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          volumeMounts:
+            - name: data
+              mountPath: /usr/src/app/data
+              subPath: data
+            - name: data
+              mountPath: /usr/src/app/uploads
+              subPath: uploads
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: wishlist-data
