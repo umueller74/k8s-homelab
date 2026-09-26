@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: esphome
+  namespace: esphome
+  annotations:
+    gethomepage.dev/href: 'https://esphome.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: ESPHome
+    gethomepage.dev/group: Home Automation
+    gethomepage.dev/icon: esphome.png
+    gethomepage.dev/app: esphome
+    gethomepage.dev/name: ESPHome
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '10'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`esphome.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: esphome
+          port: 80
+  tls: {}
