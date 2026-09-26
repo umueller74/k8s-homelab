@@ -1,13 +1,17 @@
+# longhorn-retain, not the default longhorn class: an accidental Kustomization
+# delete must not take the device list with it.
+#
+# Named tasmoadmin-config rather than reusing tasmoadmin-data: that claim was
+# bound to a static NFS PV, and a PVC's storage class cannot be changed in place.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: tasmoadmin-data
+  name: tasmoadmin-config
   namespace: tasmoadmin
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ""
-  volumeName: tasmoadmin-data
+  storageClassName: longhorn-retain
   resources:
     requests:
-      storage: 2Gi
+      storage: 1Gi

@@ -3,3 +3,4 @@ kind: Kustomization
 
 resources:
   - ../../base/tasmoadmin
+  - tasmoadmin-backup-nas.sops.yaml

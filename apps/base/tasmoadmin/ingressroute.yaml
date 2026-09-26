@@ -24,3 +24,24 @@ spec:
           name: tasmoadmin
           port: 80
   tls: {}
+---
+# Firmware downloads for OTA upgrades. Tasmota fetches the image over plain
+# HTTP from http://<ota_server_ip>:<ota_server_port>/data/firmwares/<file>, so
+# TasmoAdmin's OTA settings point at tasmoadmin.homelab.cs-ol.de, port 80.
+# Only the firmware directory is reachable without TLS; the UI stays on
+# websecure.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tasmoadmin-ota
+  namespace: tasmoadmin
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`tasmoadmin.homelab.cs-ol.de`) && PathPrefix(`/data/firmwares/`)
+      services:
+        - kind: Service
+          name: tasmoadmin
+          port: 80
