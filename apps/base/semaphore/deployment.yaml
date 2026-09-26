@@ -20,6 +20,12 @@ spec:
         app: semaphore
 
     spec:
+      # The Service is called "semaphore", so Kubernetes would inject
+      # SEMAPHORE_PORT=tcp://<cluster-ip>:80 (a Docker-links-era env var).
+      # Semaphore reads SEMAPHORE_PORT as its own listen port and panics:
+      #   value of field 'Port' is not valid: tcp://10.96.0.63:80
+      enableServiceLinks: false
+
       securityContext:
         # The image runs as uid 1001. fsGroup makes the Longhorn volume
         # writable for it.
