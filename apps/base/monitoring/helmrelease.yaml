@@ -87,6 +87,58 @@ spec:
     # Alertmanager configuration
     alertmanager:
       enabled: true
+
+      # Replaces the chart's default config (which routes everything to
+      # 'null'), so its inhibit rules are repeated here.
+      config:
+        global:
+          resolve_timeout: 5m
+          # In-cluster Postfix relay (apps/base/smtp-relay); it handles TLS and
+          # authentication towards mail.cs-ol.de, so this hop is plain SMTP.
+          smtp_smarthost: smtp-relay.smtp-relay.svc.cluster.local:587
+          smtp_from: kubernetes@cs-ol.de
+          smtp_require_tls: false
+        inhibit_rules:
+          - source_matchers:
+              - 'severity = critical'
+            target_matchers:
+              - 'severity =~ warning|info'
+            equal:
+              - 'namespace'
+              - 'alertname'
+          - source_matchers:
+              - 'severity = warning'
+            target_matchers:
+              - 'severity = info'
+            equal:
+              - 'namespace'
+              - 'alertname'
+          - source_matchers:
+              - 'alertname = InfoInhibitor'
+            target_matchers:
+              - 'severity = info'
+            equal:
+              - 'namespace'
+          - target_matchers:
+              - 'alertname = InfoInhibitor'
+        route:
+          group_by: ['namespace', 'alertname']
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 12h
+          receiver: email
+          routes:
+            # Always-firing heartbeat that proves the alert pipeline works
+            - receiver: 'null'
+              matchers:
+                - alertname = "Watchdog"
+        receivers:
+          - name: 'null'
+          - name: email
+            email_configs:
+              - to: info@cs-ol.de
+                send_resolved: true
+
       alertmanagerSpec:
         storage:
           volumeClaimTemplate:
