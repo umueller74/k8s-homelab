@@ -183,15 +183,6 @@ data:
                 username: mueller
                 password: '{{HOMEPAGE_VAR_QNAP_PASSWORD}}'
     - Prometheus Stack:
-        - Prometheus:
-            href: http://192.168.1.28:9090/
-            icon: prometheus.png
-            server: docker-lab1
-            container: prometheus
-            widget:
-                type: prometheus
-                url: http://192.168.1.28:9090
-
         - InfluxDB 2:
             href: http://192.168.1.28:8086/
             siteMonitor: http://192.168.1.28:8086/
@@ -231,18 +222,6 @@ data:
             container: wishlist-app
 
     - Monitoring:
-        - Grafana:
-            href: http://192.168.1.28:3001/
-            icon: grafana.png
-            server: docker-lab1
-            container: grafana
-            widget:
-                type: grafana
-                version: 2
-                alerts: grafana
-                url: http://192.168.1.28:3001
-                username: admin
-                password: '{{HOMEPAGE_VAR_GRAFANA_PASSWORD}}'
         - NTFY:
             href: https://ntfy.meatweb2.duckdns.org/
             siteMonitor: https://ntfy.meatweb2.duckdns.org/
