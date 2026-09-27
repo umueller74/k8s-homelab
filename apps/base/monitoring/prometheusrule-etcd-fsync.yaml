@@ -1,0 +1,44 @@
+# Replaces the chart's etcdHighFsyncDurations (disabled in helmrelease.yaml),
+# #131. All three etcd members share one consumer NVMe on pve2, so the p99
+# WAL fsync sits in the 0.512-1.024 s histogram bucket whenever the cluster is
+# busy, and the chart's 0.5 s warning fired ~200 times a week. At 1 s for 15m
+# it would have fired ~5 times over the same 7 days.
+#
+# This hides a real problem (etcd wants p99 < 10 ms); the fix is a better
+# disk. etcdHighNumberOfLeaderChanges stays at the chart default and is the
+# alert for actual harm.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: etcd-fsync-durations
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: etcd-fsync-durations
+      rules:
+        - alert: etcdHighFsyncDurations
+          expr: |
+            histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m])) > 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: etcd cluster 99th percentile fsync durations are too high.
+            description: >-
+              etcd cluster "{{ $labels.job }}": 99th percentile fsync durations
+              are {{ $value }}s on etcd instance {{ $labels.instance }}.
+            runbook_url: https://runbooks.prometheus-operator.dev/runbooks/etcd/etcdhighfsyncdurations
+        - alert: etcdHighFsyncDurations
+          expr: |
+            histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job=~".*etcd.*"}[5m])) > 2
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: etcd cluster 99th percentile fsync durations are too high.
+            description: >-
+              etcd cluster "{{ $labels.job }}": 99th percentile fsync durations
+              are {{ $value }}s on etcd instance {{ $labels.instance }}.
+            runbook_url: https://runbooks.prometheus-operator.dev/runbooks/etcd/etcdhighfsyncdurations
