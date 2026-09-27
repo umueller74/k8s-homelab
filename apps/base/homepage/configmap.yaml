@@ -117,16 +117,6 @@ data:
                 slug: overview
 
     - Code:
-        - NGINX Proxy Manager - INTERN:
-            href: http://192.168.0.54:8081/
-            icon: nginx-proxy-manager.png
-            server: docker-raspi2
-            container: nginx-app-1
-            widget:
-                type: npm
-                url: http://192.168.0.54:8081
-                username: info@cs-ol.de
-                password: '{{HOMEPAGE_VAR_NPM_INTERN_PASSWORD}}'
         - NGINX Proxy Manager - EXTERN:
             href: http://10.7.0.9:8081/
             icon: nginx-proxy-manager.png
