@@ -5,9 +5,12 @@
 # in #123). It applies to every listener, since per_listener_settings is off.
 #
 # The websockets listener serves MQTTX Web (#126), which connects from the
-# browser and cannot speak plain TCP. bind_interface eth0 keeps it on the pod
-# network: Traefik reaches it at wss://mqttui.homelab.cs-ol.de/mqtt, but it is
-# not opened on the LAN address 192.168.1.25 (net1).
+# browser and cannot speak plain TCP. Traefik reaches it at
+# wss://mqttui.homelab.cs-ol.de/mqtt; it must not open on the LAN address
+# 192.168.1.25 (net1). Mosquitto ignores bind_interface for websockets
+# listeners, and an interface name as the listener host hangs the broker at
+# startup, so it binds to the pod IP instead (#128). This file is a template:
+# the deployment's render-config init container replaces POD_IP.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -18,8 +21,7 @@ data:
     listener 1883 0.0.0.0
     allow_anonymous true
 
-    listener 9001
-    bind_interface eth0
+    listener 9001 POD_IP
     protocol websockets
 
     persistence true
