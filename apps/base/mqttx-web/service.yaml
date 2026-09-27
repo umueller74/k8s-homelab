@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqttx-web
+  namespace: mqttx-web
+spec:
+  type: ClusterIP
+  selector:
+    app: mqttx-web
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http

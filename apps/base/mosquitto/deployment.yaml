@@ -45,6 +45,8 @@ spec:
           ports:
             - name: mqtt
               containerPort: 1883
+            - name: websockets
+              containerPort: 9001
 
           resources:
             requests:

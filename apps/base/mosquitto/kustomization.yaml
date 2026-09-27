@@ -7,6 +7,7 @@ resources:
   - pvc.yaml
   - deployment.yaml
   - service.yaml
+  - ingressroute.yaml
   - servicemonitor.yaml
   - prometheusrule.yaml
   - backup.yaml

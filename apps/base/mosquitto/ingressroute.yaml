@@ -1,0 +1,20 @@
+# MQTT over WebSockets for MQTTX Web (#126). The UI lives in the mqttx-web
+# namespace on the same host; this longer rule wins for /mqtt, so the browser
+# connects to wss://mqttui.homelab.cs-ol.de/mqtt with Traefik's wildcard
+# certificate. Mosquitto ignores the request path.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mosquitto-websockets
+  namespace: mosquitto
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`mqttui.homelab.cs-ol.de`) && Path(`/mqtt`)
+      services:
+        - kind: Service
+          name: mosquitto
+          port: 9001
+  tls: {}
