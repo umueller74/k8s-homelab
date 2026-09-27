@@ -4,10 +4,8 @@ metadata:
   name: mosquitto
   namespace: mosquitto
 spec:
-  # 0 until the cutover (#123): raspi2 still holds 192.168.1.25, and two hosts
-  # answering ARP for the same address breaks both. Set to 1 once .25 is
-  # removed from raspi2.
-  replicas: 0
+  # Never more than 1: two pods answering ARP for 192.168.1.25 breaks both.
+  replicas: 1
 
   # One pod owns the static macvlan address and the RWO volume.
   strategy:
