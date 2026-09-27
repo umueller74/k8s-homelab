@@ -1,0 +1,68 @@
+# MQTTX Web: a static single-page app. The MQTT connection runs in the
+# browser (WebSockets only, see mosquitto/ingressroute.yaml), and saved
+# connections live in the browser's storage, so the pod keeps no state.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqttx-web
+  namespace: mqttx-web
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: mqttx-web
+
+  template:
+    metadata:
+      labels:
+        app: mqttx-web
+
+    spec:
+      # The image runs http-server as root on port 80. Running it as the
+      # image's node user on 8080 needs no privileges.
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: mqttx-web
+          image: emqx/mqttx-web:v1.13.1
+          command:
+            - http-server
+            - -p
+            - '8080'
+
+          ports:
+            - name: http
+              containerPort: 8080
+
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]

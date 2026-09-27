@@ -1,4 +1,5 @@
-# In-cluster access (mosquitto.mosquitto.svc:1883) and the metrics scrape.
+# In-cluster access (mosquitto.mosquitto.svc:1883), the websockets listener
+# behind Traefik (see ingressroute.yaml) and the metrics scrape.
 # LAN devices use the macvlan address 192.168.1.25 instead.
 apiVersion: v1
 kind: Service
@@ -16,6 +17,10 @@ spec:
       protocol: TCP
       port: 1883
       targetPort: mqtt
+    - name: websockets
+      protocol: TCP
+      port: 9001
+      targetPort: websockets
     - name: metrics
       protocol: TCP
       port: 9234

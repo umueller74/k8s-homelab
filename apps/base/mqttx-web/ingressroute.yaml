@@ -1,0 +1,30 @@
+# LAN-only like every Traefik route, and without a login (decided in #126):
+# the broker already accepts anonymous clients on 192.168.1.25:1883.
+# In MQTTX, connect with wss://, host mqttui.homelab.cs-ol.de, port 443,
+# path /mqtt.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mqttx-web
+  namespace: mqttx-web
+  annotations:
+    gethomepage.dev/href: 'https://mqttui.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: MQTT client for Mosquitto
+    gethomepage.dev/group: Home Automation
+    gethomepage.dev/icon: mqtt.png
+    gethomepage.dev/app: mqttx-web
+    gethomepage.dev/name: MQTTX Web
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '6'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`mqttui.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: mqttx-web
+          port: 80
+  tls: {}
