@@ -1,0 +1,17 @@
+# longhorn-retain, not the default longhorn class: an accidental Kustomization
+# delete must not take the retained messages (device states, HA discovery)
+# with it.
+#
+# mosquitto.db was 276 KB on raspi2.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mosquitto-data
+  namespace: mosquitto
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 1Gi

@@ -1,0 +1,26 @@
+# NAS login for the nightly PVC backup (scp to 192.168.1.240). Same NAS
+# account as pihole-backup-nas.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: mosquitto-backup-nas
+    namespace: mosquitto
+type: Opaque
+stringData:
+    username: ENC[AES256_GCM,data:DXo2yTs=,iv:Br+q3sn/EfQ2aWURkLmupI+yMtaypCQzNj9K9h08YrY=,tag:VqTlnwbLEc2AAXIml75mdQ==,type:str]
+    password: ENC[AES256_GCM,data:AukhS0zxapr4,iv:JU9/9feI8M5897wU0vGfqbG1Vg+Zy3NhD8BjOJzokuw=,tag:KT4CZDFCUvYjj/kFvkA50w==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBJdWk5dzNqdkFGejJRdXFn
+            MUNud00wVWFlcXhFanRDcTVIZVBBT29kTlRzCmkyRm5lZktrd2xUY3hkeXY0Ti9V
+            VXJQYWRmMGxFRW1JTzNWUjh6WlNUZk0KLS0tIFoxSmFEMVd6eUV2VGxmMzlYcnBW
+            aUpNVlV6NXpvTUZ3c0k3TFZtbDNWZ0kKASNU9HoC6Kn1EBxwTm6Ki8sPxwnzu2TY
+            dbWZv2YBm3vEPSczBMz8Uc9aSffGBJpCV/a57emOUPXqjdWJpTNk8g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-09-27T14:10:12Z"
+    mac: ENC[AES256_GCM,data:W/iDVWZRCZ5hbib5dbe1KoLiEXN3vWJh7aJ4FOQk8Nb3w5YTJNFk2+oBejVosIiVUs4u3V0Lf5yJcC+yUbl/QQyXOaK8nrM0A3vMsB4CNKwRHP+SPrxjNxYvTNxf9vp+qz8XdRhBj93hceiJfThscrLRh23HyarNOK4InIPHCzU=,iv:3K+pxXvUxuS5P/wQB/0ihOkGfrCTjnA2IZkCqi16Jn8=,tag:3ojGbqEvvWiMejPjV4vs8Q==,type:str]
+    version: 3.13.3

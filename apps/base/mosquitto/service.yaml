@@ -1,0 +1,22 @@
+# In-cluster access (mosquitto.mosquitto.svc:1883) and the metrics scrape.
+# LAN devices use the macvlan address 192.168.1.25 instead.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto
+  namespace: mosquitto
+  labels:
+    app: mosquitto
+spec:
+  type: ClusterIP
+  selector:
+    app: mosquitto
+  ports:
+    - name: mqtt
+      protocol: TCP
+      port: 1883
+      targetPort: mqtt
+    - name: metrics
+      protocol: TCP
+      port: 9234
+      targetPort: metrics

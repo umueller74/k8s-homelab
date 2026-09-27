@@ -1,0 +1,32 @@
+# Gives the broker 192.168.1.25 on the household LAN. Many devices have that
+# address configured instead of a name, so it has to survive the move from
+# raspi2. MetalLB can't hand it out: its pool lives on the node subnet
+# (10.98.0.0), and L2 mode only announces addresses there.
+#
+# Same design as homeassistant/lan-macvlan, with its own address. No
+# "gateway": a macvlan default route would take precedence over the pod
+# network and break cluster DNS. The /22 address alone routes LAN traffic out
+# net1; internet and in-cluster traffic keeps using eth0.
+#
+# Only one host may hold .25: remove it from raspi2 (netplan-eth0) before the
+# pod starts.
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: lan-macvlan
+  namespace: mosquitto
+spec:
+  config: |
+    {
+      "cniVersion": "0.3.1",
+      "name": "lan-macvlan",
+      "type": "macvlan",
+      "master": "ens19",
+      "mode": "bridge",
+      "ipam": {
+        "type": "static",
+        "addresses": [
+          { "address": "192.168.1.25/22" }
+        ]
+      }
+    }

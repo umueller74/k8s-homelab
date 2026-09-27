@@ -1,0 +1,22 @@
+# Carried over unchanged from raspi2 (/docker/mosquitto/config/mosquitto.conf),
+# except that the empty conf.d include is gone.
+#
+# allow_anonymous stays true: the devices connect without credentials (decided
+# in #123).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-config
+  namespace: mosquitto
+data:
+  mosquitto.conf: |
+    listener 1883 0.0.0.0
+    allow_anonymous true
+
+    persistence true
+    persistence_location /mosquitto/data/
+    persistence_file mosquitto.db
+
+    log_dest stdout
+    log_type all
+    pid_file /tmp/mosquitto.pid
