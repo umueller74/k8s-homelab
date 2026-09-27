@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto
+  namespace: mosquitto
+spec:
+  # 0 until the cutover (#123): raspi2 still holds 192.168.1.25, and two hosts
+  # answering ARP for the same address breaks both. Set to 1 once .25 is
+  # removed from raspi2.
+  replicas: 0
+
+  # One pod owns the static macvlan address and the RWO volume.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: mosquitto
+
+  template:
+    metadata:
+      labels:
+        app: mosquitto
+      annotations:
+        k8s.v1.cni.cncf.io/networks: mosquitto/lan-macvlan
+
+    spec:
+      # The image's entrypoint only chowns /mosquitto when started as root.
+      # Running as the image's mosquitto user and letting fsGroup own the
+      # volume avoids that.
+      securityContext:
+        runAsUser: 1883
+        runAsGroup: 1883
+        fsGroup: 1883
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: mosquitto
+          image: eclipse-mosquitto:2.0.22
+          command:
+            - /usr/sbin/mosquitto
+            - -c
+            - /mosquitto/config/mosquitto.conf
+
+          ports:
+            - name: mqtt
+              containerPort: 1883
+
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
+          livenessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 10
+            periodSeconds: 20
+
+          readinessProbe:
+            tcpSocket:
+              port: mqtt
+            periodSeconds: 10
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+
+          volumeMounts:
+            - name: config
+              mountPath: /mosquitto/config
+              readOnly: true
+            - name: data
+              mountPath: /mosquitto/data
+
+        # Subscribes to the broker's $SYS topics over localhost and serves
+        # them as Prometheus metrics.
+        - name: exporter
+          image: sapcc/mosquitto-exporter:0.8.0
+          args:
+            - --endpoint
+            - tcp://127.0.0.1:1883
+            - --bind-address
+            - 0.0.0.0:9234
+
+          ports:
+            - name: metrics
+              containerPort: 9234
+
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+
+          securityContext:
+            runAsUser: 65534
+            runAsGroup: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+
+      volumes:
+        - name: config
+          configMap:
+            name: mosquitto-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: mosquitto-data
