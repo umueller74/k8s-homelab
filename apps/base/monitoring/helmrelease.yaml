@@ -14,6 +14,13 @@ spec:
         name: prometheus-community
         namespace: flux-system
   values:
+    # etcdHighFsyncDurations is replaced by prometheusrule-etcd-fsync.yaml with
+    # higher thresholds (#131). customRules can only change for/severity, not
+    # the expression, so the chart's rule has to be switched off.
+    defaultRules:
+      disabled:
+        etcdHighFsyncDurations: true
+
     prometheus:
       prometheusSpec:
         # Used for the "Source" links in alerts; defaults to the in-cluster URL.
