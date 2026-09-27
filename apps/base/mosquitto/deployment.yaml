@@ -34,6 +34,48 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 
+      # Writes mosquitto.conf with the pod IP filled in, so the websockets
+      # listener binds to eth0 only (see configmap.yaml). The pod IP does not
+      # change during the pod's lifetime.
+      initContainers:
+        - name: render-config
+          image: eclipse-mosquitto:2.0.22
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              [ -n "$POD_IP" ] || { echo "FATAL: POD_IP is empty" >&2; exit 1; }
+              sed "s/POD_IP/$POD_IP/" /config-template/mosquitto.conf > /mosquitto/config/mosquitto.conf
+              grep -x "listener 9001 $POD_IP" /mosquitto/config/mosquitto.conf
+
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+
+          volumeMounts:
+            - name: config-template
+              mountPath: /config-template
+              readOnly: true
+            - name: config
+              mountPath: /mosquitto/config
+
       containers:
         - name: mosquitto
           image: eclipse-mosquitto:2.0.22
@@ -110,9 +152,11 @@ spec:
               drop: [ALL]
 
       volumes:
-        - name: config
+        - name: config-template
           configMap:
             name: mosquitto-config
+        - name: config
+          emptyDir: {}
         - name: data
           persistentVolumeClaim:
             claimName: mosquitto-data
