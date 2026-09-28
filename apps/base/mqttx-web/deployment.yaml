@@ -1,6 +1,8 @@
 # MQTTX Web: a static single-page app. The MQTT connection runs in the
 # browser (WebSockets only, see mosquitto/ingressroute.yaml), and saved
 # connections live in the browser's storage, so the pod keeps no state.
+# An init container copies the site to an emptyDir and injects seed.js
+# (see seed-configmap.yaml) that pre-registers the Mosquitto connection.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,17 +30,53 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 
+      initContainers:
+        - name: inject-seed
+          image: emqx/mqttx-web:v1.13.1
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              cp -r /app/. /site/
+              cp /seed/seed.js /site/seed.js
+              sed -i 's#<script type="text/javascript" src="/app.js">#<script src="/seed.js"></script>&#' /site/index.html
+              grep -q 'src="/seed.js"' /site/index.html
+          volumeMounts:
+            - name: site
+              mountPath: /site
+            - name: seed
+              mountPath: /seed
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+
       containers:
         - name: mqttx-web
           image: emqx/mqttx-web:v1.13.1
           command:
             - http-server
+            - /site
             - -p
             - '8080'
 
           ports:
             - name: http
               containerPort: 8080
+
+          volumeMounts:
+            - name: site
+              mountPath: /site
+              readOnly: true
 
           resources:
             requests:
@@ -66,3 +104,10 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
+
+      volumes:
+        - name: site
+          emptyDir: {}
+        - name: seed
+          configMap:
+            name: mqttx-web-seed

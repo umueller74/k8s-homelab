@@ -1,0 +1,67 @@
+# MQTTX Web stores its connections in the browser (localStorage key "db",
+# a lowdb document with a "connections" array), so the server cannot
+# register one. The deployment's init container injects seed.js into
+# index.html; on a browser's first visit the script adds a "Mosquitto"
+# connection to that store. A marker key keeps it from coming back after
+# the user deletes it. The record mirrors getDefaultRecord() of MQTTX Web
+# v1.13.1; re-check it when upgrading the image.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mqttx-web-seed
+  namespace: mqttx-web
+data:
+  seed.js: |
+    (function () {
+      var MARKER = 'seed-mosquitto-done'
+      try {
+        if (localStorage.getItem(MARKER)) return
+        var db = JSON.parse(localStorage.getItem('db') || '{}')
+        if (!Array.isArray(db.connections)) db.connections = []
+        var now = new Date().toISOString().slice(0, 19).replace('T', ' ')
+        db.connections.push({
+          id: 'seed-mosquitto',
+          clientId: 'mqttx_' + Math.random().toString(16).substring(2, 10),
+          createAt: now,
+          updateAt: now,
+          name: 'Mosquitto',
+          clean: true,
+          protocol: 'wss',
+          host: 'mqttui.homelab.cs-ol.de',
+          port: 443,
+          path: '/mqtt',
+          ssl: true,
+          keepalive: 60,
+          connectTimeout: 10,
+          reconnect: true,
+          reconnectPeriod: 4000,
+          username: '',
+          password: '',
+          certType: '',
+          rejectUnauthorized: true,
+          ALPNProtocols: '',
+          ca: '',
+          cert: '',
+          key: '',
+          mqttVersion: '5.0',
+          subscriptions: [],
+          messages: [],
+          pushProps: {},
+          unreadMessageCount: 0,
+          client: { connected: false },
+          will: {
+            lastWillTopic: '',
+            lastWillPayload: '',
+            lastWillQos: 0,
+            lastWillRetain: false,
+            properties: { contentType: '', responseTopic: '' },
+          },
+          properties: {},
+          clientIdWithTime: false,
+        })
+        localStorage.setItem('db', JSON.stringify(db))
+        localStorage.setItem(MARKER, '1')
+      } catch (e) {
+        console.error('mqttx-web seed failed', e)
+      }
+    })()
