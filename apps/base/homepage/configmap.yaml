@@ -106,16 +106,6 @@ data:
             href: https://192.168.1.24:8006/
             icon: proxmox.png
 
-        - 'Uptime Kuma':
-            href: http://10.7.0.9:3001/
-            icon: uptime-kuma.png
-            server: docker-ionosxs
-            container: uptime-kuma
-            widget:
-                type: uptimekuma
-                url: http://10.7.0.9:3001
-                slug: overview
-
     - Code:
         - NGINX Proxy Manager - EXTERN:
             href: http://10.7.0.9:8081/
@@ -154,7 +144,29 @@ data:
                 url: http://192.168.1.177
                 key: '{{HOMEPAGE_VAR_OCTOPRINT_KEY}}'
 
+    - Infrastructure:
+        - PiHole:
+            href: https://pihole.homelab.cs-ol.de/admin
+            description: PiHole
+            icon: si-pihole.png
+            widget:
+                type: pihole
+                url: https://pihole.homelab.cs-ol.de
+                version: 6
+                key: '{{HOMEPAGE_VAR_PIHOLE_KEY}}'
+
     - Monitoring:
+        - Grafana:
+            href: https://grafana.homelab.cs-ol.de
+            description: Grafana
+            icon: grafana.png
+            widget:
+                type: grafana
+                url: https://grafana.homelab.cs-ol.de
+                version: 2
+                alerts: alertmanager
+                username: admin
+                password: '{{HOMEPAGE_VAR_GRAFANA_PASSWORD}}'
         - NTFY:
             href: https://ntfy.meatweb2.duckdns.org/
             siteMonitor: https://ntfy.meatweb2.duckdns.org/
