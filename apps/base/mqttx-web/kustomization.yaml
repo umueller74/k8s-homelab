@@ -3,5 +3,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - service.yaml
+  - seed-configmap.yaml
   - deployment.yaml
   - ingressroute.yaml
