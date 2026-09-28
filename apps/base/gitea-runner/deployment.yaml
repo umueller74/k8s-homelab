@@ -38,8 +38,6 @@ spec:
               value: k8s-runner
             - name: GITEA_RUNNER_LABELS
               value: "ubuntu-latest:docker://node:16-bullseye,ubuntu-22.04:docker://node:16-bullseye,ubuntu-20.04:docker://node:16-bullseye"
-            - name: GITEA_RUNNER_EPHEMERAL
-              value: "0"
 
           resources:
             requests:
