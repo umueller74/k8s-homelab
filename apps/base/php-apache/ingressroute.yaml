@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: php-apache
+  namespace: php-apache
+  annotations:
+    gethomepage.dev/href: 'https://services.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Kids internet block/unblock
+    gethomepage.dev/group: Home Automation
+    gethomepage.dev/icon: unifi.png
+    gethomepage.dev/app: php-apache
+    gethomepage.dev/name: UniFi Scripts
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '20'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`services.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: php-apache
+          port: 80
+  tls: {}
