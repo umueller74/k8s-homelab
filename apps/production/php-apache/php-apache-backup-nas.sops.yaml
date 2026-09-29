@@ -1,0 +1,26 @@
+# NAS login for the nightly PVC backup (scp to 192.168.1.240). Same NAS
+# account as pihole-backup-nas.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: php-apache-backup-nas
+    namespace: php-apache
+type: Opaque
+stringData:
+    username: ENC[AES256_GCM,data:2wNvlu4=,iv:MU7CJYg5d7opdEv60x/VdjcUCyGv4I60/GrsMWhHvMU=,tag:lhUrC0YHCeqwFZCrf9ztEA==,type:str]
+    password: ENC[AES256_GCM,data:n/wRfkAkmSi3,iv:khgnqYAhlS7DMrbmxAmQppdRR8cCZDm5qZjA7t9fT0o=,tag:2h71pGPAJAsUE5iH/ldhxg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBUTWxSSTRvdXo2UFRPZHJt
+            RUFOOXlwTUtNdFNSajRpV2RTSDVXUHRaZUI0CnI0bGI3a3RxVVQrU1BuZFp1amZI
+            VzNWZFZvbG5CNCtlRDh1RDRJTmhqMncKLS0tIHNHVmZQMGhsMng4djhjV3hYNkRs
+            N3dIYXc1b1dhSEp1UnZydGI2K0RUUGsKrDFSpNT9YXbacRfMGsRI30+lY+34Q8ep
+            RT0KFLIRSv9i68+MCl2xSbevaeUtf+GXpdjVYyk9gmM/gk6YplLyFA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-09-29T19:07:28Z"
+    mac: ENC[AES256_GCM,data:h72uAS1D8DpCz2jQWaYsoJ7XUagfvMDZxa7y/wNbPmOMKfacbrcF3czNs3lfIXcFyEEb9hSUdliz3snNGG0bL/YatX8CftFi079MZUr1vPbLcVJgfkts9t0RQR50Sx1nNpENb+bNvAEbdOtUUcMh80kVXJ+S0PUNdAPeechMSXs=,iv:40dVx+2TAwne0ue4b0UtpZMGR05uUYv3F9ez7jXFpTg=,tag:cVb3lSHqe7mu9W3/G28apA==,type:str]
+    version: 3.13.3

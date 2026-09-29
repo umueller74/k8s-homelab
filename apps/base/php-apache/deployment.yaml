@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+  namespace: php-apache
+spec:
+  replicas: 1
+
+  # ReadWriteOnce volume: never run two pods at once.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: php-apache
+
+  template:
+    metadata:
+      labels:
+        app: php-apache
+
+    spec:
+      # The Service name is php-apache; injected PHP_APACHE_* variables would
+      # only add noise.
+      enableServiceLinks: false
+
+      containers:
+        - name: php-apache
+          image: php:8.3-apache
+
+          ports:
+            - name: http
+              containerPort: 80
+
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+
+          volumeMounts:
+            - name: html
+              mountPath: /var/www/html
+            # UDM API credentials. Mounted over the copied file so they never
+            # live on the PVC or in Git.
+            - name: unifi-config
+              mountPath: /var/www/html/unifi/config.php
+              subPath: config.php
+              readOnly: true
+
+      volumes:
+        - name: html
+          persistentVolumeClaim:
+            claimName: php-apache-html
+        - name: unifi-config
+          secret:
+            secretName: php-apache-unifi-config

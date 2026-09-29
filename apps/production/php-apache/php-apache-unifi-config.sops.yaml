@@ -1,0 +1,25 @@
+# UDM Pro API credentials for the unifi/ scripts. Mounted over
+# /var/www/html/unifi/config.php.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: php-apache-unifi-config
+    namespace: php-apache
+type: Opaque
+stringData:
+    config.php: ENC[AES256_GCM,data:/CvGPIHyNFCSbqvc+PxgHGEyBYWZGSlzoR8FV2UkCuK7A6IxKuyn9ozPLwW7QuK8P+9b6xRHIHekn4DiYpLo8ZVN2/27R4YP6XRsXC375eT41LVSao2640bNQecmB3ftC/jaxu2qM0Xba0ddvOaheCyWuYUyNxed1FB5s3U8Ho18J0gGhX7qCgQ5k9T5XbURnKOpcn5gp9UYDVqDgodYnO/Cn8lML64eZLVWb7DS1o5SPzXRuWJh4bDiwqg2vtdOE0u0sY0ps7f5FMZ3fXCuaTHAcAgjLTErEAt+y4meIh1Xu8yoCmYWjorm9Jl338VeidXCz8k33cySQ5zo+o2/7UnL9t1qnC4XAO0aBxJSPOu/fv0m4N1SqkBEKAeLT90ZkRA5FNAzRYATL7ciqiihBbuSNLgDia/JN8jkyfimtmlYZLmqrMZNeJBNTL9WeUkvKL4l1wpd5Q1CGBjXZKFaIHjpcDAlJDQH9PFStlUSHmlbvaF7iMoWQr2+lnd4j58ctfZQIlSvV2jdzgX9cXPkdwG81XrHEACN/iSZHDIGXm4WmpRm4jDnwkDDMl9SssXJX5EBPaDL/7WCVh1MPfJK0G4evLjmGwVnzdrqe7ZAm35YLhfn52WWbnN8QxYvUnEWTJmAvW1vU99ZmrFK7VdcfOw1b8eDvaSoLiJQhw0EIudx6cQp385yP1cM3P4/H7LJ2AecFSsCiRbr15hYpOIQ/SD+rLggV8SHHJMdLThN4IwsrZnsVV6UjGqhTv1Hf3hx8r4KnETOjxIymLgZVpuvgVFcBHzVVsFK9+13qTZcmcaJwrfEzMrXCfOQ4Ki9SLpaZ1dNqdQHd/CC4eBZq/mJUnqoTGYeusTlRqDTKHzKkKPbMPRRUzOPWBW7AB/vFj78FmPSzPFZVjEz6dYYQWiwnMpnUxAmULWLbEE8Z0/DdcmgibaNdJQ7YsBljTix9E4TRxrjEpG+9I4jy0TDydZ+uregTdy+Zxwt4lphPtFd4ZaQozrb01Rb1FHzGy8x6WnLUEtjT196Qgww4ZDOtw+1p7O5hNDUSsUUVNkYJ9cx0XLSE5dv9zNtjyZNgmJfpKRhLxi2jOUEfftAWZaAD0hF1oi9G/uN3opJMgNey7EQP+5wCj3S1IJCazs39m00tMQFY/A9SDfJ/Qupov0F2yHRDpKDn6ntSdEq4Q5HRlGZFTu2d2jCfw==,iv:wNUlqtm9DcdRGodd2/Lck38m07xv4HurvPd+Bltj784=,tag:GiZyvdv6y8lBBLnnLynMCQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBHcExaUWVBckRVbWhZc0hH
+            R1daaW91b3NnZTR6TE4vbG4rTGVydGh2ZkdnCkVUNWlOUmxIdXh2bUxCQ3FCbU92
+            NDhpcDNMZUNvK0l5R0NtQk1JZTYrMWsKLS0tIFZod043b3BOVkJJdWtMWkpOaVBR
+            K0c5RUtyQzVsNUE5dVV3NEYxQjloWmMKK3tB1De3y9Sy7XjmEQEwWOvMzj2ElxzL
+            /AkSZ5GJfZ1o2iRqjrc1u7lE0VJO+BhInAID41m48kZI9/s7rbMdiA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-09-29T19:07:28Z"
+    mac: ENC[AES256_GCM,data:pkmE34dpSl7yeB8blMMtS8VG3phayWmv/vzEztOlNJmUKb3XOIo9iVpnrGbNwRYsgYjgxTj+rBel/7uQ7es/GiBixdZ5b/LBbmMPxvOyE3G1kbwXj07awuzYJvqGQMfjzcN5K/d3OFDV9m/tbUEYvpu4LCoGHE5xNhbob++xT8M=,iv:eyz69L9EXjMKi1OdpZFqx0YyckmDrm1MBDy+fY6U4TA=,tag:fA9+dH/VjErxg/JPRbQhlA==,type:str]
+    version: 3.13.3

@@ -1,0 +1,14 @@
+# longhorn-retain, not the default longhorn class: an accidental Kustomization
+# delete must not take the scripts (which are not in Git) with it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: php-apache-html
+  namespace: php-apache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 1Gi
