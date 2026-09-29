@@ -18,7 +18,10 @@ spec:
               echo "Targeting and annotating all nodes for Longhorn secondary storage..."
 
               # Construct the exact Longhorn configuration JSON string
-              DISK_CONFIG='[{"path":"/var/lib/longhorn","allowScheduling":true},{"path":"/var/mnt/storage","allowScheduling":true}]'
+              # Only the dedicated storage disk: /var/lib/longhorn is on the ~18 GiB
+              # system partition shared with containerd images, and replicas there
+              # cause DiskPressure evictions (#148).
+              DISK_CONFIG='[{"path":"/var/mnt/storage","allowScheduling":true}]'
 
               # Annotate and label all worker/controlplane nodes inline
               kubectl annotate nodes --all node.longhorn.io/default-disks-config="$DISK_CONFIG" --overwrite
