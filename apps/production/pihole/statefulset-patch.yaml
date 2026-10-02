@@ -11,4 +11,4 @@ spec:
         - name: pihole
           env:
             - name: FTLCONF_LOCAL_IPV4
-              value: '10.98.0.201'
+              value: '10.98.0.202'
