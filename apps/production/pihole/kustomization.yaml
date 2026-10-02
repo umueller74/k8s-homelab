@@ -7,3 +7,4 @@ resources:
 patches:
   - path: statefulset-patch.yaml
   - path: service-patch.yaml
+  - path: nebula-sync-patch.yaml

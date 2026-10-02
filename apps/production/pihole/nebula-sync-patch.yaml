@@ -1,0 +1,8 @@
+# Only pihole-0 remains, so there is no replica to sync to.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nebula-sync
+  namespace: pihole
+spec:
+  suspend: true
