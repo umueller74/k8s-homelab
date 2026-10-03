@@ -11,3 +11,11 @@ resources:
   - nebula-sync.yaml
   - backup.yaml
   - ingress.yaml
+  - unifi-sync.yaml
+
+configMapGenerator:
+  - name: unifi-sync-scripts
+    namespace: pihole
+    files:
+      - unifi-sync/pihole_sync.py
+      - unifi-sync/udm.py

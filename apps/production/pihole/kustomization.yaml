@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ../../base/pihole
+  - unifi-sync.sops.yaml
 
 patches:
   - path: statefulset-patch.yaml
