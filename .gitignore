@@ -33,3 +33,5 @@ shell-snapshots/
 
 # Claude skill temporary directories
 report/
+# Python venv for scripts/ (see scripts/requirements.txt)
+.venv/

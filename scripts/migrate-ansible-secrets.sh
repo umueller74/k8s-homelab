@@ -11,10 +11,23 @@
 #   scripts/migrate-ansible-secrets.sh --verify   # compare each file with the live Secret
 #
 # Needs kubectl (KUBECONFIG, default ~/.kube/config), sops, jq and python3 with PyYAML, and the
-# age private key where sops looks for it (~/.config/sops/age/keys.txt).
+# age private key where sops looks for it (~/.config/sops/age/keys.txt). PyYAML comes from a
+# venv in the repository root; the script uses it automatically:
+#
+#   python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
+
+PYTHON=python3
+[[ -x .venv/bin/python3 ]] && PYTHON=.venv/bin/python3
+if ! "$PYTHON" -c 'import yaml' 2>/dev/null; then
+  echo "PyYAML is missing for $PYTHON. Run: python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt" >&2
+  exit 3
+fi
+for tool in kubectl sops jq; do
+  command -v "$tool" >/dev/null || { echo "$tool is not on PATH" >&2; exit 3; }
+done
 
 # namespace  secret  directory it belongs in (next to its consumer)
 SECRETS=(
@@ -64,7 +77,7 @@ for entry in "${SECRETS[@]}"; do
     jq '{apiVersion: "v1", kind: "Secret",
          metadata: {name: .metadata.name, namespace: .metadata.namespace},
          type: (.type // "Opaque"), data: .data}' <<<"$live" |
-      python3 -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout, sort_keys=False)'
+      "$PYTHON" -c 'import json, sys, yaml; yaml.safe_dump(json.load(sys.stdin), sys.stdout, sort_keys=False)'
   } >"$tmp"
   sops --encrypt --in-place "$tmp"
   grep -q 'ENC\[AES256_GCM' "$tmp" || { echo "FAILED   $file (not encrypted)"; rm -f "$tmp"; status=1; continue; }
