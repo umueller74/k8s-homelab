@@ -1,0 +1,25 @@
+# UniFi API key for the UniFi -> Pi-hole client-name sync (unifi-pihole-sync).
+# Read-only use: the job only lists clients and devices.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: unifi-sync
+    namespace: pihole
+type: Opaque
+stringData:
+    api-key: ENC[AES256_GCM,data:ZKreHLuEGanF+BvENMmW9Yv0e9+ArLmXZ2eU6DvI3Ug=,iv:CvH9tCQblMtvqCCSwA/PaLMcSzXW4SnXK2K+PmekiKY=,tag:JGnVOMNTHqYP2z5G0YaJ9g==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAvamV6SUNCQ2trNjRuK0k5
+            U1lDVytMa3pWZVNPUkRoa1FGdDJQWElpNkQwCnJsVFUyNFh3SzFOODV5SFRCbklk
+            Ri9sN2RsTEtHM3V0eUZWZEZpQy9CVUkKLS0tIE1SZVdHN1FFVEpMK3ZBN1haVEVz
+            c0FPK21LSFFUdEN1enBJalNiM1pPeHMKL+jzXokDj3bzuqvHnBOG1zmWcYV40lFN
+            /l49Yrke3WIoRA8rmW1ExSTzUXJ6AyNsgqAWQ6jjlwfhgZzuGwt5Pw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T00:13:55Z"
+    mac: ENC[AES256_GCM,data:mlul716S1iEBvSSPgAtHx8aYlb5KFBLtIYTIXxjJj5rVYtWISx7w9Lp5JsEcPm8SnN4XqA0uuyNr2q8GED27fERcSzkxbCPWOPIzpK9QGUbJ9MFP06nzxXTQ+NNyB87Tb9HZITPANILzYj0lJGiaUsc2t22vSiThlE9gV9wUMxg=,iv:pSL/XvzqF5Putzh3ZOzBajujuAbasolPcij/FvCXq0k=,tag:aTt0ct+IfZ7elpgZT2VDXw==,type:str]
+    version: 3.13.3

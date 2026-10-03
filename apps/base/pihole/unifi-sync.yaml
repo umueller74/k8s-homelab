@@ -1,0 +1,86 @@
+# Copies UniFi client names into Pi-hole's Clients list (the per-IP description)
+# so the query log and client list show "kuehlschrank" instead of 192.168.1.92.
+#
+# Name = UniFi alias, falling back to the DHCP hostname, the local DNS record's
+# first label, then "<vendor> <MAC tail>". Only IPs Pi-hole has actually seen get
+# an entry, and existing descriptions are never overwritten (no --force), so a
+# name set by hand in Pi-hole wins. Writes go to pihole-0 only.
+#
+# The scripts are pihole_sync.py + udm.py (stdlib only), shipped through the
+# unifi-sync-scripts ConfigMap generated in this directory's kustomization. They
+# are copies of the unifi skill's scripts: keep them in sync when that changes.
+# Needs the SOPS-encrypted Secret unifi-sync (UNIFI_API_KEY) from the overlay.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: unifi-pihole-sync
+  namespace: pihole
+spec:
+  schedule: '*/15 * * * *'
+  timeZone: Europe/Amsterdam
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            seccompProfile:
+              type: RuntimeDefault
+
+          containers:
+            - name: sync
+              image: python:3.13-alpine
+              command: ['python', '/app/pihole_sync.py']
+
+              env:
+                - name: PIHOLE_URL
+                  value: http://pihole-0.pihole-headless.pihole.svc.cluster.local
+                - name: PIHOLE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: pihole-secret
+                      key: password
+                - name: UDM_HOST
+                  value: '192.168.0.1'
+                - name: UNIFI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: unifi-sync
+                      key: api-key
+                # Read-only rootfs: do not try to write __pycache__.
+                - name: PYTHONDONTWRITEBYTECODE
+                  value: '1'
+
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ['ALL']
+
+              volumeMounts:
+                - name: scripts
+                  mountPath: /app
+                  readOnly: true
+
+          volumes:
+            - name: scripts
+              configMap:
+                name: unifi-sync-scripts
