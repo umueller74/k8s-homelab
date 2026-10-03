@@ -4,6 +4,8 @@ kind: Kustomization
 resources:
   - ../../base/pihole
   - unifi-sync.sops.yaml
+  - pihole-secret.sops.yaml
+  - pihole-backup-nas.sops.yaml
 
 patches:
   - path: statefulset-patch.yaml

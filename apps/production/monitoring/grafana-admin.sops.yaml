@@ -1,0 +1,25 @@
+# Created by Ansible (roles/talos create_k8s_secrets) and now managed here with SOPS (#165).
+apiVersion: v1
+kind: Secret
+metadata:
+    name: grafana-admin
+    namespace: monitoring
+type: Opaque
+data:
+    password: ENC[AES256_GCM,data:vtnQMA6XbcJWqUCS,iv:C7aeY9HOX3PtgnH3ttBCAuJHEvgDmaS8nqpoLR0vs1U=,tag:+J5siYAqRp7vMIZjGUzroA==,type:str]
+    username: ENC[AES256_GCM,data:LgGjO8XOWPk=,iv:zyqw0L/gJeI8lU5sb+10l1KWwiCJQGH0gnU5jLU5R/M=,tag:x+4U5VWhFDGcT7YxAXoEWA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA0YURoTTBhYWVmc2dxU1ZE
+            Zi8vMjM5UnJod2ZMN2k3Myt5V2hJRDlIR0RvClVCZ1ArY3MwWXoxWkVseDArRjk0
+            Y3VWNzFDWWJlKy9CdU5meGRWb2hNRDgKLS0tIFIzOTlvTHl3NHplaWxYQ0tvUi85
+            bEF4WmFJbVpYR0s0cWVXNWE2WWVSZlkKUm2E6iy/VMzaLdRAJBpDkP3W9HQHVH2O
+            yPedh+cEKXHE+wZxVp30PFMQKRTFUohfJuTt8YCmZcz3cChzAEZ2Fw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:36:56Z"
+    mac: ENC[AES256_GCM,data:NQlLzZp+CiouMapoKUC92udvDtGKy+mqUokJp1qEQITgBykDGxieIUPhtqpDh4tH30tRJ6DoOb7J3h2Oc2kFD4+9MUe7KNnF7zUzVhYnlR7FuRPTfQVE/u2d4yBbjUfEpAse3w1sZeDzZ/KzHDDIPY7AA8uyU82JajYT/lqCQZk=,iv:Xnb1JPQUG6JGSxyclZCZ5G8HCZBE47G0BQO3bwH+PRo=,tag:/YimoYd+jNH4LG8QiN6fxA==,type:str]
+    version: 3.13.3

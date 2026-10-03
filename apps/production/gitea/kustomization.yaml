@@ -4,3 +4,7 @@ kind: Kustomization
 resources:
   - ../../base/gitea
   - ../../base/gitea-runner
+  - gitea-admin-credentials.sops.yaml
+  - gitea-postgresql-credentials.sops.yaml
+  - gitea-user-credentials.sops.yaml
+  - cs-ol-website-deploy.sops.yaml

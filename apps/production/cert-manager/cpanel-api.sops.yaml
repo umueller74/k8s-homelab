@@ -1,0 +1,25 @@
+# Created by Ansible (roles/talos create_k8s_secrets) and now managed here with SOPS (#165).
+apiVersion: v1
+kind: Secret
+metadata:
+    name: cpanel-api
+    namespace: cert-manager
+type: Opaque
+data:
+    apiToken: ENC[AES256_GCM,data:atVQfdNKImw2lp1aEvn3LUvki6w2jSfMmyx51cRG9GzIK0wlCNMl3UCGv6s=,iv:VuaLiJ76GdE2EUe9kxmb/YQg/37VggXlAu7QpEECC84=,tag:4Nv5FnOyYWwwtzUx1d3WJg==,type:str]
+    username: ENC[AES256_GCM,data:ClBweQh45Fo=,iv:xDg9Pc95o2C7oHhuI1DHe+qE8LgTNcm3NShD8BPjCCs=,tag:zajO+zsv/zoZYL5C8ao0RA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBRVG81bm1wbjY3VU1ab3Zw
+            Vm5vVis0OEhPT1FxclNxTk9TVlpOaFRRaWl3CjVncHBYdVdKQWRpaERKUWtXb1Qz
+            SUJTVUkrNkxiVTcvaVlWLzRiSGxOUFkKLS0tIDVIV3FGbzg5WVc1b0pkNk5XMFhk
+            SFEzUWJkQjJKS25hZGc0cHdibVh1L0EKD/FyY6dSzJKT3v2otHSL4pDmbP3LsYRZ
+            9TF5iHoqy2U91pjRSIgUQZqRZYh+HYcfHuNcSnC1F2FHAkYt+2sDvw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:36:56Z"
+    mac: ENC[AES256_GCM,data:twtZkdK4ZEM5ku/eLPZdLbODx116nOGCokH9FiutFGfr4xdNktD+kk1S03Ef11Yb3HijtBpodJH7L7jOPzwd09fwRvbRNWR/XBFWiCg+X1gZqwsOXIcSrXgwSSVUQ9yfTzU/9O3FTjUX8CD/7bbEpjGaCa1WqEYNSBSxPYZ+SHE=,iv:B7X9aqhgDo9V/EOhqfjsQZx28bMM0/msPTRwRW5stLI=,tag:UnOnHmZCJZ2ggvRwFeHRvQ==,type:str]
+    version: 3.13.3
