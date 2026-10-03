@@ -17,5 +17,11 @@ spec:
   prune: true
   wait: true
 
+  # Decrypt *.sops.yaml Secrets with the age key in flux-system/sops-age
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+
   dependsOn:
     - name: infrastructure
