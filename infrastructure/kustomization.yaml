@@ -8,3 +8,4 @@ resources:
   - multus/ks.yaml
   - node-feature-discovery/ks.yaml
   - kubelet-serving-cert-approver/ks.yaml
+  - metrics-server/ks.yaml
