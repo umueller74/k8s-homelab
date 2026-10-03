@@ -1,0 +1,25 @@
+# Created by Ansible (roles/talos create_k8s_secrets) and now managed here with SOPS (#165).
+apiVersion: v1
+kind: Secret
+metadata:
+    name: cs-ol-website-deploy
+    namespace: gitea
+type: Opaque
+data:
+    ftp-password: ENC[AES256_GCM,data:ggtirFK2VUaFXGbpeSIYOi02Kaq3/zIzrMa0nQ==,iv:d9/AwJ+myPF8SwVJAuFlBqE2G5YiX8qq2vFYIwq7SFQ=,tag:gbuCOHwZeT/Xzh/oPkwSQA==,type:str]
+    ftp-user: ENC[AES256_GCM,data:pK+j6YneYIKeqYor/0X4nCaozYg=,iv:nF+9Xd4XOoXSvUXXfzLronZTLyIi6fYgDLx/1oD1gek=,tag:1QTVEKBzlC0IVWyjLuuY9g==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBPNTNtV0prcUVUMXppWlYv
+            WWI3dGJlRlM1enJ3OWhORlFrVnRpaUUveVUwClVmMUVwa0hiT2VxWmFRUnpQclFT
+            TDRyQWFJMm0vY1Z5Y3NJbGpsTHBQNlEKLS0tIFFLS09QR25jQlNYeUlrSlRuOWVq
+            NmdDdzF5YXU5cDFPYkNYejN2Ri9BcE0KJcs/Vvyxs6aZ7wH3PJephablkSzVlAE7
+            PxJA43+y71cNCBEVIgXmjNzV2HHewr26dLfI4njrTELCOambG7RWWg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:36:58Z"
+    mac: ENC[AES256_GCM,data:QUVZ5/9r/moYEOAAWn4JvguD+TrWA9qCa/U1tjNrkhxcRd5DoA/pwkm6Yh2sp0rh64K5foGeztdAFMAtJYCpcc+JA0bsFkYJh6RIHnaFGY9kvpj36oBrpCcYYAoVaumcbGm7JtSaLqpErBf5kwScciPZMrryQPWeUuLbLCiXgGU=,iv:BUXVyhrHoaWfYRLMxG1qZrmUuBUj02+B4eHbFXHeE4c=,tag:yl35CQN7KWa2y40rifFwgA==,type:str]
+    version: 3.13.3

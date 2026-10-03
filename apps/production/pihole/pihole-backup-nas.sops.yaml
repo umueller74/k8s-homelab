@@ -1,0 +1,25 @@
+# Created by Ansible (roles/talos create_k8s_secrets) and now managed here with SOPS (#165).
+apiVersion: v1
+kind: Secret
+metadata:
+    name: pihole-backup-nas
+    namespace: pihole
+type: Opaque
+data:
+    password: ENC[AES256_GCM,data:hday89OL866XX+vY,iv:Bi4kfDbEaPrj8axMZXRXsJIDw65/go8yQ5jvU6xr8VU=,tag:UQA9ewNJ2KZRVUcor8YUwA==,type:str]
+    username: ENC[AES256_GCM,data:3gKaKI1ihXQ=,iv:cxzVh+byFbpmwSGHjXYy8HWpIAZh1ZTWMSMHpaln9+o=,tag:EIPoWzz8gNTGVWYBQY4o6Q==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBvdTA4VDliZXRFY0pWbTc3
+            amdIVDdvSEtNTFlSTnhKR0NpTGdFbnVJd2lFCmVhUjI0cHN3c3ZUSFBNNEJMT2RL
+            Q1EzUFQ1UFl0Mkd5U3NDTmZobHduVVkKLS0tIFBFb1I1K3NiYVNsWmgrVHl3Q0lQ
+            aWtXL09Xcnc0SUg3dlovdWtadGExYU0KQoBuyY6+imgb20g14vdf63lCYbk24bxK
+            9KG03LMgmJbZ/5T1uWrLa6jps0tKpdSonNtAn7ptfxBdJlCtfB+KjQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:36:56Z"
+    mac: ENC[AES256_GCM,data:XVAervX5qbF49GioBS1bC9imk3B2qh4fqmKH8/7GUvyg/ZpJcxM6yC6UhhKjGGaE5lsIGsvroE6VNnBMxTf5yoPEx5/JoN/WTJRsLeBNckxkATAWK8t1VGIH86oALplEqG7JL1VpP1pI4wHhrGHsbkEBUyVcqgStfo6pBf8rJgM=,iv:xynVUenTKT8+D6mTs2YZYmJ79kaqSLXPlRwfJSh+Rog=,tag:QBzYWCXiLr+/ClxfMl/Lvw==,type:str]
+    version: 3.13.3

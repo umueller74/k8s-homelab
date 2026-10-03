@@ -253,6 +253,11 @@ This repository is **public**. New secrets must be encrypted with SOPS (age); ol
 - The age private key lives in `~/.config/sops/age/keys.txt` on the admin workstation and in the cluster as Secret `flux-system/sops-age` — never in Git. Losing it means re-creating every encrypted secret, so keep a backup.
 - Encrypt: write the Secret as `<name>.sops.yaml`, then `sops --encrypt --in-place <name>.sops.yaml`
 - Edit: `sops <name>.sops.yaml`
+- Secrets that used to be created by Ansible (`roles/talos/tasks/create_k8s_secrets.yaml` in the homelab repo)
+  are moved here with `scripts/migrate-ansible-secrets.sh` (it copies the live Secret into a `<name>.sops.yaml`
+  and `--verify` compares without printing any value). The only secrets Git cannot hold are the ones that let
+  Flux start: its Git credentials and `flux-system/sops-age`, which the `flux` role of the `umueller74.talos`
+  collection creates from vaulted variables.
 - The Flux Kustomization applying the file needs decryption enabled:
   ```yaml
   spec:
