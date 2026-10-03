@@ -14,3 +14,9 @@ spec:
   path: ./apps/production
   prune: true
   wait: true
+
+  # Decrypt *.sops.yaml Secrets (e.g. pihole/unifi-sync) with the age key in flux-system/sops-age
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
