@@ -1,0 +1,8 @@
+# Applied by the root Kustomization of the throwaway talos_test cluster (see
+# umueller74/homelab#83). It only has to prove that Flux reconciles this repo, so
+# it deploys one empty Namespace and nothing that could clash with production on
+# the shared VLAN. Never point a real cluster at this path.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flux-smoke
