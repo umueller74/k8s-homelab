@@ -1,0 +1,13 @@
+# Root of the throwaway talos_test cluster (VLAN 100, 10.99.0.0/24), see
+# umueller74/homelab#83 and #103. New deployments are tested here before they go to
+# production. Shared pieces are referenced from where production keeps them; only what
+# differs lives under clusters/test and apps/test. Never point a real cluster at this path.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  # The MetalLB controller is shared with production; the address pool is test's own.
+  - metallb.yaml
+  - metallb-config.yaml
+  - apps.yaml
+  - certificates.yaml

@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-labtest
+  namespace: traefik
+spec:
+  secretName: wildcard-labtest-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: labtest-ca
+  commonName: '*.labtest.cs-ol.de'
+  dnsNames:
+    - labtest.cs-ol.de
+    - '*.labtest.cs-ol.de'

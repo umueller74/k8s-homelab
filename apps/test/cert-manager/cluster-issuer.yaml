@@ -1,0 +1,32 @@
+# The test cluster has no public DNS challenge, so it signs with its own CA: the
+# cert-manager machinery is exercised, the certificates are not trusted by clients.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: labtest-selfsigned
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: labtest-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: labtest-ca
+  secretName: labtest-ca
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    kind: ClusterIssuer
+    name: labtest-selfsigned
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: labtest-ca
+spec:
+  ca:
+    secretName: labtest-ca
