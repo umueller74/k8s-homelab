@@ -1,5 +1,6 @@
 # What differs from production: the address, the dashboard host, and no persistence
-# (the test cluster has no Longhorn; certificates come from cert-manager, not ACME).
+# (the test cluster has no Longhorn; certificates come from cert-manager, not ACME), and
+# no ServiceMonitor (the Prometheus Operator CRDs exist only on production).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -15,3 +16,7 @@ spec:
         matchRule: Host(`traefik.labtest.cs-ol.de`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
     persistence:
       enabled: false
+    metrics:
+      prometheus:
+        serviceMonitor:
+          enabled: false
