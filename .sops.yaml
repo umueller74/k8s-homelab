@@ -7,6 +7,10 @@
 # Encrypt a new secret in place:  sops --encrypt --in-place <file>.sops.yaml
 # Edit an encrypted secret:       sops <file>.sops.yaml
 creation_rules:
+  # The throwaway test cluster has its own key, with dummy values only (apps/test).
+  - path_regex: ^apps/test/.*\.sops\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1w2dk6ggca2hphjrl0sdakekhv0s7tnfgken5v2jyfls8ay59p57q9h0nfp
   - path_regex: .*\.sops\.yaml$
     encrypted_regex: ^(data|stringData)$
     age: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
