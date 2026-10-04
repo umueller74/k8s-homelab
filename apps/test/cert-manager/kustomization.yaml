@@ -1,4 +1,4 @@
-# The issuer chain lives in clusters/test/certificates: its kinds exist only once this
+# The issuer chain lives in clusters/test/apps-config: its kinds exist only once this
 # release has installed the cert-manager CRDs.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -6,3 +6,14 @@ resources:
   - ../../base/cert-manager
 patches:
   - path: helmrelease-patch.yaml
+  # No DNS-01 on the test cluster (it signs with its own CA), so no cPanel webhook.
+  - target:
+      kind: HelmRelease
+      name: cert-manager-cpanel-webhook
+    patch: |-
+      $patch: delete
+      apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      metadata:
+        name: cert-manager-cpanel-webhook
+        namespace: cert-manager
