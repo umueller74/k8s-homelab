@@ -1,7 +1,8 @@
+# The issuer chain lives in clusters/test/certificates: its kinds exist only once this
+# release has installed the cert-manager CRDs.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base/cert-manager
-  - cluster-issuer.yaml
 patches:
   - path: helmrelease-patch.yaml
