@@ -10,5 +10,8 @@ spec:
       containers:
         - name: pihole
           env:
-            - name: FTLCONF_LOCAL_IPV4
+            # FTLCONF_LOCAL_IPV4 is a Pi-hole v5 variable and is ignored by v6.
+            - name: FTLCONF_dns_reply_host_IPv4
               value: '10.98.0.202'
+            - name: FTLCONF_dns_reply_host_force4
+              value: 'true'
