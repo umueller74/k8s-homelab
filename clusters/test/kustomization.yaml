@@ -10,4 +10,4 @@ resources:
   - metallb.yaml
   - metallb-config.yaml
   - apps.yaml
-  - certificates.yaml
+  - apps-config.yaml

@@ -1,0 +1,11 @@
+# Same as apps/base/traefik/middleware.yaml (a Traefik CRD), applied after the release
+# has installed the CRDs. The test overlay deletes it from the apps step.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: traefik
+spec:
+  rateLimit:
+    average: 100
+    burst: 50

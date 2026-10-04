@@ -4,3 +4,15 @@ resources:
   - ../../base/traefik
 patches:
   - path: helmrelease-patch.yaml
+  # The Middleware kind exists only once this release has installed Traefik's CRDs; see
+  # clusters/test/apps-config/middleware.yaml.
+  - target:
+      kind: Middleware
+      name: rate-limit
+    patch: |-
+      $patch: delete
+      apiVersion: traefik.io/v1alpha1
+      kind: Middleware
+      metadata:
+        name: rate-limit
+        namespace: traefik
