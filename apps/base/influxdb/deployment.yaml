@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb
+  namespace: influxdb
+spec:
+  # Home Assistant keeps writing to lab1 until the cutover (issue #171), so a
+  # fresh, empty instance here does no harm while the backup is restored.
+  replicas: 1
+
+  # ReadWriteOnce volume: never run two pods at once.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: influxdb
+
+  template:
+    metadata:
+      labels:
+        app: influxdb
+
+    spec:
+      enableServiceLinks: false
+
+      securityContext:
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: influxdb
+          image: influxdb:2.9.1
+
+          ports:
+            - name: http
+              containerPort: 8086
+
+          env:
+            # Only used on the very first start (empty data dir). The token is
+            # the one lab1 used, so Home Assistant keeps working after a
+            # `influx restore --full`, which brings the old tokens back anyway.
+            - name: DOCKER_INFLUXDB_INIT_MODE
+              value: setup
+            - name: DOCKER_INFLUXDB_INIT_ORG
+              value: docs
+            - name: DOCKER_INFLUXDB_INIT_BUCKET
+              value: home
+            - name: DOCKER_INFLUXDB_INIT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-admin
+                  key: username
+            - name: DOCKER_INFLUXDB_INIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-admin
+                  key: password
+            - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-admin
+                  key: token
+            - name: INFLUXD_LOG_LEVEL
+              value: info
+            - name: INFLUXD_METRICS_DISABLED
+              value: 'false'
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: '1'
+              memory: 1536Mi
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+
+          securityContext:
+            allowPrivilegeEscalation: false
+
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/influxdb2
+              subPath: data
+            - name: data
+              mountPath: /etc/influxdb2
+              subPath: config
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: influxdb

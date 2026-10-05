@@ -1,0 +1,146 @@
+# Pins the NAS host key so the backup cannot be silently redirected to another
+# host. Public key material, safe to commit. Refresh with:
+#   ssh-keyscan -t rsa 192.168.1.240
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: influxdb-backup-known-hosts
+  namespace: influxdb
+data:
+  known_hosts: |
+    192.168.1.240 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDEgmfWaeLMCD53RLIVoaszI1ujimBf0eAko7mQ5QN1PItNmdg8BNdWaPeUwKerz/whUpFtpfvv8BUOB/e4VIDU/mJvci32i5+2rHj/IMeV23201m3XIqHgxJkfQ1zO182caHQa0d9bf9WUXUzSfjGXEZiGNrkG6S4DyzmixQaROtnuP3rdhxO0fq7lS7y/zWSU1m4PfSrsQyJ60kJ1Tx+6QwBVBv2XOhweqzAqKPcRvwE8z69NzMJw+9kAJMVQ7nX1i5eHVtd1VnUWL/QUQ8kRcxQCPlciVL4GFuEVYOLlBVlJVwWwBf2LQ5hbsWyouvsvbjunmhK0UmR7xcfyq5J
+---
+# Nightly `influx backup` of the whole instance, copied to the NAS over scp.
+#
+# The init container takes the backup through the API (no volume access, so it
+# can run on any node); the main container packs and ships it. The admin token
+# is only needed to authorise the backup call.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: influxdb-backup
+  namespace: influxdb
+spec:
+  schedule: '40 3 * * *'
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+
+          initContainers:
+            - name: dump
+              image: influxdb:2.9.1
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  influx backup /backup --host http://influxdb.influxdb.svc.cluster.local:8086
+              env:
+                - name: INFLUX_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: influxdb-admin
+                      key: token
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+
+          containers:
+            - name: ship
+              image: alpine:3.22
+
+              env:
+                - name: APP
+                  value: influxdb
+                - name: KEEP
+                  value: '14'
+                - name: NAS_HOST
+                  value: '192.168.1.240'
+                - name: NAS_PATH
+                  value: /share/MD0_DATA/Backup/influxdb
+                - name: NAS_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: influxdb-backup-nas
+                      key: username
+                # sshpass -e reads the password from SSHPASS, keeping it out of
+                # the command line and therefore out of the process list.
+                - name: SSHPASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: influxdb-backup-nas
+                      key: password
+
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  apk add --no-cache openssh-client sshpass tar >/dev/null
+
+                  # UTC: alpine ships no tzdata, so file names carry UTC time.
+                  STAMP=$(date -u +%Y-%m-%d_%H%MZ)
+                  OUT="/tmp/${APP}-${STAMP}.tar.gz"
+                  tar -C /backup -czf "$OUT" .
+
+                  SIZE=$(wc -c < "$OUT")
+                  [ "$SIZE" -gt 100000 ] || { echo "FATAL: archive implausibly small ($SIZE bytes)" >&2; exit 1; }
+
+                  # The NAS runs OpenSSH 7.6: -O forces the legacy scp protocol,
+                  # and ssh-rsa is the only host key type it offers.
+                  SSH_OPTS="-o UserKnownHostsFile=/etc/nas/known_hosts -o StrictHostKeyChecking=yes -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa"
+                  sshpass -e ssh $SSH_OPTS "${NAS_USER}@${NAS_HOST}" "mkdir -p '${NAS_PATH}'"
+                  sshpass -e scp -O $SSH_OPTS "$OUT" "${NAS_USER}@${NAS_HOST}:${NAS_PATH}/"
+
+                  # Keep the newest $KEEP archives of this app.
+                  sshpass -e ssh $SSH_OPTS "${NAS_USER}@${NAS_HOST}" \
+                    "cd '${NAS_PATH}' && ls -1t ${APP}-*.tar.gz | sed -n '$((KEEP + 1)),\$p' | while read -r f; do rm -f \"\$f\"; done"
+
+                  echo "Backed up $(basename "$OUT") ($SIZE bytes) to ${NAS_HOST}:${NAS_PATH}"
+
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+
+              securityContext:
+                allowPrivilegeEscalation: false
+
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                  readOnly: true
+                - name: known-hosts
+                  mountPath: /etc/nas
+                  readOnly: true
+
+          volumes:
+            - name: backup
+              emptyDir: {}
+            - name: known-hosts
+              configMap:
+                name: influxdb-backup-known-hosts

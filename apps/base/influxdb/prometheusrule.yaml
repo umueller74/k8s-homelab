@@ -1,0 +1,25 @@
+# Home Assistant's history goes here; a down InfluxDB means lost data points
+# (the integration drops what it cannot deliver).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: influxdb
+  namespace: influxdb
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: influxdb
+      rules:
+        - alert: InfluxDBDown
+          expr: |
+            up{namespace="influxdb", service="influxdb"} == 0
+              or absent(up{namespace="influxdb", service="influxdb"})
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: InfluxDB unreachable
+            description: >-
+              The InfluxDB metrics endpoint has not been scraped for 5 minutes.
+              Home Assistant history is not being recorded.
