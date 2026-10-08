@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-agent
+  namespace: hermes-agent
+spec:
+  replicas: 1
+
+  # Never run two gateways against the same data directory.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: hermes-agent
+
+  template:
+    metadata:
+      labels:
+        app: hermes-agent
+
+    spec:
+      # The image runs as hermes (uid 10000); the volume must be writable by it.
+      securityContext:
+        fsGroup: 10000
+
+      initContainers:
+        # Seeds config.yaml once. Hermes edits the file at runtime, so an
+        # existing one is never overwritten. To pick up a changed key or
+        # model, delete /opt/data/config.yaml and restart the pod.
+        - name: seed-config
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              [ -f /opt/data/config.yaml ] && exit 0
+              [ "$FREELLMAPI_API_KEY" != "CHANGEME" ] || { echo "FREELLMAPI_API_KEY not set in secret" >&2; exit 1; }
+              cat > /opt/data/config.yaml <<CFG
+              model:
+                provider: custom
+                model: auto
+                base_url: http://freellmapi.freellmapi.svc.cluster.local/v1
+                api_key: "$FREELLMAPI_API_KEY"
+              CFG
+              chown 10000:10000 /opt/data/config.yaml
+          env:
+            - name: FREELLMAPI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-agent-secrets
+                  key: FREELLMAPI_API_KEY
+          securityContext:
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+
+      containers:
+        - name: hermes-agent
+          image: nousresearch/hermes-agent:v0.21.6
+          args:
+            - gateway
+            - run
+
+          envFrom:
+            - secretRef:
+                name: hermes-agent-secrets
+          env:
+            - name: HERMES_UID
+              value: '10000'
+            - name: HERMES_GID
+              value: '10000'
+            - name: HERMES_DASHBOARD
+              value: '1'
+            - name: HERMES_DASHBOARD_HOST
+              value: 0.0.0.0
+            - name: HERMES_DASHBOARD_PORT
+              value: '9119'
+            - name: API_SERVER_ENABLED
+              value: 'true'
+            - name: API_SERVER_HOST
+              value: 0.0.0.0
+            - name: API_SERVER_PORT
+              value: '8642'
+
+          ports:
+            - name: dashboard
+              containerPort: 9119
+            - name: api
+              containerPort: 8642
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: '2'
+              memory: 2Gi
+
+          # First boot chowns the volume and migrates config; a liveness
+          # probe that is too eager would loop it. The image has no
+          # HEALTHCHECK, so probe the TCP port.
+          startupProbe:
+            tcpSocket:
+              port: api
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            tcpSocket:
+              port: api
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            tcpSocket:
+              port: api
+            periodSeconds: 10
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: hermes-agent-data
