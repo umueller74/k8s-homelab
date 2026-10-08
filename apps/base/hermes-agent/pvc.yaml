@@ -1,0 +1,14 @@
+# longhorn-retain, not the default longhorn class: an accidental Kustomization
+# delete must not take config, memories and skills with it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hermes-agent-data
+  namespace: hermes-agent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 5Gi
