@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: freellmapi
+  namespace: freellmapi
+  annotations:
+    gethomepage.dev/href: 'https://freellmapi.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Free LLM API router
+    gethomepage.dev/group: Primary Services
+    gethomepage.dev/icon: mdi-robot
+    gethomepage.dev/app: freellmapi
+    gethomepage.dev/name: FreeLLMAPI
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '20'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`freellmapi.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: freellmapi
+          port: 80
+  tls: {}

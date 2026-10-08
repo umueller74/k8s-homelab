@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: freellmapi
+  namespace: freellmapi
+spec:
+  replicas: 1
+
+  # SQLite on a ReadWriteOnce volume: never run two pods at once.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: freellmapi
+
+  template:
+    metadata:
+      labels:
+        app: freellmapi
+
+    spec:
+      containers:
+        - name: freellmapi
+          image: ghcr.io/tashfeenahmed/freellmapi:v0.13.6
+
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: '3001'
+            # Required in production. Losing it makes the stored provider keys
+            # unreadable.
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: freellmapi-secrets
+                  key: ENCRYPTION_KEY
+
+          ports:
+            - name: http
+              containerPort: 3001
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          livenessProbe:
+            httpGet:
+              path: /api/ping
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+
+          readinessProbe:
+            httpGet:
+              path: /api/ping
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          # The image starts as root: docker-entrypoint.sh chowns the data
+          # dir, then drops to the node user via setpriv. So no runAsNonRoot,
+          # but everything except what that needs is dropped.
+          securityContext:
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - SETUID
+                - SETGID
+
+          volumeMounts:
+            - name: data
+              mountPath: /app/server/data
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: freellmapi-data
