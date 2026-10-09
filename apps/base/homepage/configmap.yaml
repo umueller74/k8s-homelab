@@ -83,13 +83,12 @@ data:
                 username: homepage
                 password: '{{HOMEPAGE_VAR_UNIFI_PASSWORD}}'
         - Paperless:
-            href: http://192.168.1.28:8001/
+            href: https://paperless.homelab.cs-ol.de/
             icon: paperless.png
-            server: docker-lab1
-            container: paperless-webserver-1
+            siteMonitor: http://paperless.paperless.svc.cluster.local:8000/accounts/login/
             widget:
                 type: paperlessngx
-                url: http://192.168.1.28:8001/
+                url: http://paperless.paperless.svc.cluster.local:8000/
                 username: mueller
                 password: '{{HOMEPAGE_VAR_PAPERLESS_PASSWORD}}'
         - Proxmox Macmini:
