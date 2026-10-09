@@ -7,8 +7,8 @@ Date: 2026-10-09. Part of phase 4 of #107 (lab1 decommission).
 Move Paperless-ngx from lab1 (Docker) into the Talos cluster, together with the two scanner
 ingest paths (FTP and SMB) and a NAS backup. Success means:
 
-- All documents (542 at 2026-09-27, plus the `consume/` backlog) are in the cluster and match lab1.
-- The scanner delivers into the cluster through FTP and SMB.
+- All documents (602 in the database on 2026-10-09, plus the `consume/` backlog) are in the cluster and match lab1.
+- The scanner delivers into the cluster through FTP and SMB, on the same address as today (`192.168.1.28`).
 - A nightly backup lands on the NAS and a restore has been shown to work.
 - lab1's Paperless, proftpd and samba units are disabled, with their compose files kept for rollback.
 
@@ -39,16 +39,25 @@ chart: the stack is small and the repo's SOPS and Kustomize conventions fit bett
 | Gotenberg | Deployment | none | Small memory limit. |
 | Tika | Deployment | none | Small memory limit. |
 | Paperless webserver | Deployment, 1 replica | PVCs `data`, `media`, `consume` | RWO volumes, single replica. |
-| proftpd | Deployment | `consume` PVC | MetalLB LoadBalancer IP, narrowed passive port range (lab1 uses 50000-50100). |
-| samba | Deployment | `consume` PVC | Own LoadBalancer service. |
+| paperless-ingest | Deployment, 1 replica | `consume` PVC | One pod, two containers: proftpd (passive 50000-50100) and samba (`Public` share). Macvlan LAN address `192.168.1.28/22`. |
 
-proftpd and samba must mount `consume` while the webserver does too. An RWO volume is enforced per
-node, so they are scheduled onto the webserver's node with `podAffinity`, the same way the
-php-apache backup job does. Their uid/gid must match the Paperless user so files can be consumed
-and removed.
+**Ingest address.** The scanners and other devices use lab1's own address `192.168.1.28`, and
+reconfiguring them is not wanted. MetalLB cannot serve it (its pool `10.98.0.200-254` is on the node
+subnet), so the ingest pod gets a Multus macvlan address like Mosquitto does. Before the pod starts,
+lab1 is moved to a new, reserved address (UniFi fixed IP plus NetworkManager), and everything that
+used lab1's old address is updated. FTP and SMB credentials stay unchanged for the same reason.
+
+The ingest pod mounts `consume` together with the webserver. An RWO volume is enforced per node, so
+the pod is scheduled onto the webserver's node with `podAffinity`, as the php-apache backup job is.
+Both ingest containers write as uid/gid 33 (as on lab1) while Paperless consumes as 1000, so the
+consume tree stays world-writable.
+
+**Pre-consume script.** lab1 mounts `removepassword.py` (unlocks encrypted PDFs, extracts PDF
+attachments) and `passwords.txt` into the webserver. The script goes into a ConfigMap, the passwords
+file into a SOPS Secret.
 
 Images, ports, users and share definitions for proftpd and samba are taken from lab1's compose
-files (read-only). The `plan` step records them.
+files; proftpd and samba are pinned by digest to the images lab1 runs, Tika to its 3.3.1 digest.
 
 ## Access, secrets, mail
 
@@ -66,10 +75,14 @@ files (read-only). The `plan` step records them.
 A nightly CronJob in the php-apache style (pinned NAS host key, `sshpass -e`, no secrets on the
 command line):
 
-1. `document_exporter --delta` (no zip) into a staging directory, plus `pg_dump` with a dated name.
-2. `rsync -a --delete --link-dest=<previous snapshot>` over SSH to
-   `192.168.1.240:/share/MD0_DATA/Backup/paperless/<YYYY-MM-DD>/`. Unchanged files are hardlinked,
-   so history costs little extra space.
+1. `document_exporter -d` (no zip) into a staging tree on the export PVC, plus `pg_dump` with a
+   dated name. paperless-ngx 3.0.4 has no `--delta` option: the exporter skips unchanged files on
+   its own and `-d` removes files of deleted documents.
+2. `rsync -a` over SSH to `192.168.1.240:/share/MD0_DATA/Backup/paperless/<YYYY-MM-DD>/` with
+   `--link-dest=<previous snapshot>`: unchanged files are hardlinked, so history costs little extra
+   space. A second `rsync -a --delete` keeps a single mirror in
+   `/share/MD0_DATA/Paperless/offsite/`. `mega_io` syncs the whole `Paperless` share to MEGA, so the
+   hardlinked history stays outside it (every hardlink would be uploaded as its own file).
 3. Retention: keep the newest 14 snapshots.
 4. Size sanity check before upload (as in php-apache) and a `PrometheusRule` alert when the last
    successful run is older than 36 hours.
@@ -94,7 +107,9 @@ Follows the phase-2 recipe in #107.
    on disk.
 3. Run `document_importer` in the cluster. Compare the document count and a sample of file
    checksums against lab1's export.
-4. Move the FTP and SMB service IPs, repoint the scanner, then Homepage.
+4. Give lab1 its new address (secondary address first, verify, then remove `.28`), scale the ingest
+   pod up on `192.168.1.28`, test FTP and SMB drops (existing and new subfolder), then update the
+   references to lab1's old address and Homepage.
 5. Run the backup Job once with `kubectl create job --from=cronjob/paperless-backup` and verify
    the snapshot on the NAS.
 6. Restore test: import the snapshot into a scratch instance or namespace.
@@ -118,7 +133,9 @@ volumes remain untouched until the migration is verified.
 
 ## Open items (resolved in the implementation plan)
 
-- Exact image tags (match lab1's Paperless version) and proftpd/samba images.
-- MetalLB IPs for FTP and SMB.
+- Nothing about images remains open: Paperless 3.0.4 and the proftpd/samba/Tika digests are pinned in the plan.
 - PVC sizes (measure `media` and `data` on the NAS, add headroom).
-- Whether the `homelab` repo needs a PR for the lab1 unit changes (user merges those).
+- The new address for lab1 (picked in UniFi at cutover time); the `homelab` repo needs a PR for the
+  inventory and `qnapexporter` defaults (user merges those).
+- InfluxDB (#171) must be fully moved before lab1's address changes: HA writes to
+  `192.168.1.28:8086` until it is repointed.
