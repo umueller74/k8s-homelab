@@ -12,3 +12,6 @@ resources:
   - ingressroute.yaml
   - networkattachment.yaml
   - ingest.yaml
+  - known-hosts.yaml
+  - backup.yaml
+  - prometheusrule.yaml
