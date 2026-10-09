@@ -306,7 +306,7 @@ resources:
 - [ ] **Step 5: Verify**
 
 Run: `kubectl kustomize apps/base/paperless | grep -c '^kind:'` → Expected: `7` (1 Namespace, 4 PVCs, 2 ConfigMaps).
-Run: `kubectl kustomize apps/base/paperless | python3 -c 'import sys,yaml; [d for d in yaml.safe_load_all(sys.stdin)]; print("yaml ok")'` → `yaml ok`. Then confirm the embedded script survived: `kubectl kustomize apps/base/paperless | grep -c pikepdf` → at least `8`.
+Run: `kubectl kustomize apps/base/paperless | python3 -c 'import sys,yaml; [d for d in yaml.safe_load_all(sys.stdin)]; print("yaml ok")'` → `yaml ok`. Then confirm the embedded script survived: `kubectl kustomize apps/base/paperless | grep -c pikepdf` → at least `6` (the script mentions pikepdf six times).
 
 - [ ] **Step 6: Commit**
 
@@ -616,7 +616,7 @@ spec:
 Add to `kustomization.yaml` resources: `postgres.yaml`, `redis.yaml`, `gotenberg.yaml`, `tika.yaml`.
 Run: `kubectl apply --dry-run=client -k apps/base/paperless | tail -12`
 Expected: every object listed as `created (dry run)`, no errors.
-Run: `kubectl kustomize apps/base/paperless | grep -c 'memory:'` → Expected: at least `14` (a request and a limit for every container).
+Run: `kubectl kustomize apps/base/paperless | grep -c 'memory:'` → Expected: `8` (a request and a limit for each of the four containers).
 
 - [ ] **Step 7: Commit**
 
