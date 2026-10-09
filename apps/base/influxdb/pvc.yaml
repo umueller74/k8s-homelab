@@ -1,0 +1,18 @@
+# longhorn-retain, not the default longhorn class: an accidental Kustomization
+# delete must not take the history with it.
+#
+# The bucket was 4.5 GB on lab1 (infinite retention), so 20Gi leaves room to
+# grow. Both data (/var/lib/influxdb2) and config (/etc/influxdb2) live on
+# this volume, in separate subPaths.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: influxdb
+  namespace: influxdb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 20Gi

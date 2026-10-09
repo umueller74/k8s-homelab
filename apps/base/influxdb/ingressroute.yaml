@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: influxdb
+  namespace: influxdb
+  annotations:
+    gethomepage.dev/href: 'https://influxdb.homelab.cs-ol.de'
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/description: Home Assistant history
+    gethomepage.dev/group: Prometheus Stack
+    gethomepage.dev/icon: influxdb.png
+    gethomepage.dev/app: influxdb
+    gethomepage.dev/name: InfluxDB 2
+    gethomepage.dev/pod-selector: ''
+    gethomepage.dev/weight: '30'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`influxdb.homelab.cs-ol.de`)
+      services:
+        - kind: Service
+          name: influxdb
+          port: 8086
+  tls: {}
