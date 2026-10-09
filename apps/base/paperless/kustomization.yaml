@@ -10,3 +10,5 @@ resources:
   - tika.yaml
   - paperless.yaml
   - ingressroute.yaml
+  - networkattachment.yaml
+  - ingest.yaml
