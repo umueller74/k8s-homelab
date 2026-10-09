@@ -21,7 +21,8 @@ spec:
       containers:
         - name: gotenberg
           image: docker.io/gotenberg/gotenberg:8.20
-          command:
+          # args, not command: keeps the image ENTRYPOINT (tini) as PID 1 to reap children.
+          args:
             - gotenberg
             - --chromium-disable-javascript=true
             - --chromium-allow-list=file:///tmp/.*
