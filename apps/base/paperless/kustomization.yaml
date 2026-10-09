@@ -4,3 +4,7 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - config.yaml
+  - postgres.yaml
+  - redis.yaml
+  - gotenberg.yaml
+  - tika.yaml

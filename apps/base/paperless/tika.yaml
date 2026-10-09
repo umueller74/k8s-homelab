@@ -1,0 +1,56 @@
+# Pinned by digest to the image lab1 runs (Tika 3.3.1); lab1 uses :latest.
+# The JVM heap is capped below the container limit, since Tika is the largest
+# memory consumer of the stack.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-tika
+  namespace: paperless
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-tika
+  template:
+    metadata:
+      labels:
+        app: paperless-tika
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: tika
+          image: apache/tika@sha256:90b7fa1dc018434075fce9e1d9b88b1e3d0ea6979d0cf86e116c79a8073ae973
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: -Xmx512m
+          ports:
+            - name: http
+              containerPort: 9998
+          resources:
+            requests:
+              cpu: 20m
+              memory: 256Mi
+            limits:
+              cpu: '1'
+              memory: 768Mi
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-tika
+  namespace: paperless
+spec:
+  selector:
+    app: paperless-tika
+  ports:
+    - name: http
+      port: 9998
+      targetPort: http
