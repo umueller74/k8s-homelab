@@ -30,7 +30,7 @@
 
 - **lab1's IP changes while HA still writes to InfluxDB on `192.168.1.28:8086`** (#171/#172 not merged on 2026-10-09). Expected: the IP swap is blocked until the InfluxDB cutover is done (Task 0 check, Task 9 gate).
 - **Files dropped by FTP/SMB into a new subfolder are not consumable** if the folder is not world-writable (uid 33 writes, uid 1000 consumes). Expected: a test drop into an existing and a new subfolder is consumed (Task 9).
-- **Two nodes holding one RWO volume.** Expected: the ingest pod, the webserver and the backup job all land on the same node (podAffinity), and a node drain still works (Task 7 check).
+- **Two nodes holding one RWO volume.** Expected: the ingest pod and the backup job are pinned to the webserver's node (required podAffinity) and the webserver prefers the ingest pod's node (soft affinity). After any webserver restart check `kubectl -n paperless get pods -o wide`; if the webserver sits in `ContainerCreating` with a Multi-Attach error, delete the ingest pod (`kubectl -n paperless delete pod -l app=paperless-ingest`) and it reschedules next to the webserver.
 - **Backup silently empty or stale.** Expected: the job fails if the manifest is missing or the tree is implausibly small, and the alert fires when the last success is older than 36 h (Task 5, Task 10).
 - **MEGA cap.** Expected: total synced size of the `Paperless` share is measured and below ~15 GB; hardlinked history is not under the synced share (Task 0, Task 10).
 - **Importer into a non-empty database.** Expected: the import happens before any admin user or document exists, so no `PAPERLESS_ADMIN_*` is set (Task 3, Task 8).
@@ -672,6 +672,18 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      # Soft preference: follow the ingest pod, which shares the RWO consume
+      # volume and is pinned to the webserver's node by a required affinity.
+      # Without it a restart can land elsewhere (Multi-Attach).
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: paperless-ingest
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: paperless
           image: ghcr.io/paperless-ngx/paperless-ngx:3.0.4
@@ -891,6 +903,24 @@ spec:
                 matchLabels:
                   app: paperless
               topologyKey: kubernetes.io/hostname
+      initContainers:
+        # lab1's consume tree is world-writable; uid 33 (ftp/smb) writes,
+        # uid 1000 (Paperless) consumes. A fresh volume root is 0755.
+        - name: consume-perms
+          image: alpine:3.22
+          command: ['sh', '-c', 'chmod 0777 /consume']
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              cpu: 50m
+              memory: 16Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: consume
+              mountPath: /consume
       containers:
         - name: proftpd
           image: kibatic/proftpd@sha256:6f3d8dc449720be2c098bdf4a9b5f07ce6ec3a7df9cd80aff9a74607b23aee65
@@ -1035,6 +1065,8 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 2
+      # A Pending job (webserver absent) must not block later runs.
+      activeDeadlineSeconds: 7200
       template:
         spec:
           restartPolicy: OnFailure
@@ -1063,6 +1095,12 @@ spec:
                 - configMapRef:
                     name: paperless-env
               env:
+                # The command replaces the image's /init (s6), so the
+                # document_exporter wrapper's with-contenv would look for
+                # /run/s6/container_environment and wipe the environment.
+                # S6_KEEP_ENV makes it pass the environment through.
+                - name: S6_KEEP_ENV
+                  value: '1'
                 - name: PAPERLESS_DBPASS
                   valueFrom:
                     secretKeyRef:
@@ -1459,7 +1497,10 @@ flux reconcile kustomization flux-system --with-source && flux reconcile kustomi
 kubectl -n paperless get pods -o wide
 kubectl -n paperless get pvc
 kubectl top nodes
+kubectl -n paperless get pods -o wide
 ```
+The scheduler places by requests, not by real use: node `talos-isv-pq4` was at 67-71 % real memory on 2026-10-09 with only ~150 MiB headroom to the 70 % gate. If a heavy pod (tika, paperless, gotenberg) landed on a node above ~70 %: `kubectl -n paperless delete pod <pod>` so it reschedules (repeat), or cordon that node during the deploy (`kubectl cordon <node>`, and `kubectl uncordon <node>` after). Cordoning is a cluster change the user must approve.
+`PaperlessBackupStale` will fire from the merge until the first successful scheduled backup after the cutover (the empty instance fails the 1 MB check). That is expected; optionally silence it in Alertmanager.
 Expected: `paperless-db-0`, redis, gotenberg, tika and `paperless` `Running`/`Ready`, each on a node; the ingest deployment at `0/0`; all four PVCs `Bound`; nodes below ~70 %.
 Run: `kubectl -n paperless exec deploy/paperless -- sh -c 'ls -ld /usr/src/paperless/consume /usr/src/paperless/data /usr/src/paperless/media; id paperless'` → mount roots owned by `paperless` (1000).
 Run: `curl -sk -o /dev/null -w '%{http_code}\n' https://paperless.homelab.cs-ol.de/accounts/login/` → `200`.
@@ -1487,7 +1528,7 @@ First stop intake so nothing new arrives mid-export. The user runs: `! ssh root@
 ```bash
 ssh root@192.168.1.28 'docker exec paperless-webserver-1 sh -c "rm -rf /usr/src/paperless/export/* && document_exporter ../export -d --no-progress-bar"; ls /docker/paperless/export | head; du -sh /docker/paperless/export; test -s /docker/paperless/export/manifest.json && echo MANIFEST_OK'
 ```
-Expected: `MANIFEST_OK` and a size close to media + archive (about 0.5-1 GB). Then the user stops lab1 Paperless: `! ssh root@192.168.1.28 'cd /docker/paperless && docker compose stop'`.
+Expected: `MANIFEST_OK` and a size close to media + archive (about 0.5-1 GB). Then the user stops and disables lab1 Paperless, so a lab1 reboot cannot start it again: `! ssh root@192.168.1.28 'systemctl disable --now docker-compose@paperless'` (check the unit name with `systemctl list-units "docker-compose@*"`).
 
 - [ ] **Step 3: Copy the export into the cluster** (nothing else may write to the ssh stdout)
 
@@ -1518,9 +1559,17 @@ kubectl -n paperless exec paperless-db-0 -- psql -U paperless -tAc "select count
 kubectl -n paperless exec paperless-db-0 -- psql -U paperless -tAc "select count(*) from auth_user"
 kubectl -n paperless exec deploy/paperless -- sh -c 'ls /usr/src/paperless/media/documents/originals | wc -l; ls /usr/src/paperless/media/documents/archive | wc -l'
 ```
-Expected: the document and user counts equal the lab1 baseline from Step 1; the file counts match the number of `documents/originals` and `documents/archive` entries in the export (`ls import/documents/originals | wc -l` on the same pod; the md5 diff in Step 3 already proves the export arrived intact). Then restart the webserver so it re-indexes: `kubectl -n paperless rollout restart deploy/paperless` and `kubectl -n paperless exec deploy/paperless -- document_index reindex`.
+Expected: the document and user counts equal the lab1 baseline from Step 1; the file counts match the number of `documents/originals` and `documents/archive` entries in the export (`ls import/documents/originals | wc -l` on the same pod; the md5 diff in Step 3 already proves the export arrived intact). Then restart the webserver so it re-indexes: `kubectl -n paperless rollout restart deploy/paperless`, `kubectl -n paperless rollout status deploy/paperless --timeout=600s`, then `kubectl -n paperless exec deploy/paperless -- document_index reindex`.
 
-- [ ] **Step 6: The user logs in and spot-checks**
+- [ ] **Step 6: Copy lab1's consume backlog and folder tree** (after the import and reindex, so consumption does not run against an empty database and attach the backlog to nothing)
+
+```bash
+ssh root@192.168.1.28 'tar -C /docker/paperless/consume -cpf - .' | kubectl -n paperless exec -i deploy/paperless -- tar -C /usr/src/paperless/consume -xpf -
+kubectl -n paperless exec deploy/paperless -- chmod -R a+rwX /usr/src/paperless/consume
+```
+Verify: `ssh root@192.168.1.28 'cd /docker/paperless/consume && find . -type d | sort'` and `kubectl -n paperless exec deploy/paperless -- sh -c 'cd /usr/src/paperless/consume && find . -type d | sort'` list the same directories (`jule`, `meike`, `svenja`, `udo` exist on lab1 as of 2026-10-09), and `kubectl -n paperless exec deploy/paperless -- ls -la /usr/src/paperless/consume` shows them world-writable. Watch the backlog being consumed: `kubectl -n paperless logs deploy/paperless --since=5m | grep -i consum`.
+
+- [ ] **Step 7: The user logs in and spot-checks**
 
 Ask the user to open `https://paperless.homelab.cs-ol.de`, log in with their existing account, search for a known document, open its PDF and check the thumbnail. Confirm the Homepage tile shows document counts (`kubectl -n homepage rollout restart deploy/homepage` after the ConfigMap changed).
 
@@ -1556,7 +1605,10 @@ sleep 5; ping -c2 -W2 192.168.1.28 && echo "STILL ANSWERING" || echo "192.168.1.
 
 - [ ] **Step 4: Start the cluster ingest on 192.168.1.28**
 
+Suspend Flux first, otherwise a reconcile within 10 minutes scales the pod back to 0 mid-test (it is resumed after the merge in Step 5):
+
 ```bash
+flux suspend kustomization paperless
 kubectl -n paperless scale deploy/paperless-ingest --replicas=1
 kubectl -n paperless rollout status deploy/paperless-ingest --timeout=180s
 kubectl -n paperless exec deploy/paperless-ingest -c samba -- ip -4 -br a | grep 192.168.1.28
@@ -1584,7 +1636,7 @@ EOF
 )"
 git checkout main && git pull origin main
 ```
-Until the user merges it, Flux would revert the scale to 0 at the next reconcile (every 10 min): merge the PR right away, or run `flux suspend kustomization paperless` first and `flux resume` after the merge.
+Flux stays suspended (Step 4) until the user merges the PR; then run `flux resume kustomization paperless`.
 
 - [ ] **Step 6: End-to-end ingest tests (the "Review Focus" input classes)**
 
@@ -1595,12 +1647,12 @@ printf '%%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pag
 # SMB into an existing and a new subfolder
 smbclient //192.168.1.28/Public -U paperless%"$(kubectl -n paperless get secret paperless-ingest -o jsonpath='{.data.SMB_PASSWORD}' | base64 -d)" -c "put $T/ingest-test.pdf udo/smb-test-existing.pdf; mkdir newsub; put $T/ingest-test.pdf newsub/smb-test-new.pdf"
 # FTP
-curl -s -T $T/ingest-test.pdf --user "$(kubectl -n paperless get secret paperless-ingest -o jsonpath='{.data.FTP_LIST}' | base64 -d | cut -d, -f1)" ftp://192.168.1.28/ftp-test.pdf
+curl -s -T $T/ingest-test.pdf --user "$(kubectl -n paperless get secret paperless-ingest -o jsonpath='{.data.FTP_LIST}' | base64 -d | cut -d';' -f1)" ftp://192.168.1.28/ftp-test.pdf
 sleep 60
 kubectl -n paperless exec deploy/paperless -- sh -c 'find /usr/src/paperless/consume -type f | head; ls -ld /usr/src/paperless/consume/newsub'
 kubectl -n paperless logs deploy/paperless --since=3m | grep -iE 'consum|error' | tail -15
 ```
-Expected: the three test files are picked up and removed from `consume` (the content is a minimal PDF, so Paperless may report a parse failure; what counts is that the file was picked up: `Consuming` appears in the log for each, or it moved to `failed`). If `newsub` stays and its files remain: the directory/file mode is too restrictive for uid 1000: `kubectl -n paperless exec deploy/paperless-ingest -c samba -- chmod -R a+rwX /shares/public` and note it in the follow-ups. The user then scans a real page with the real scanner and checks that it appears; delete the test documents in the UI.
+Expected: the three test files are picked up and removed from `consume` (the content is a minimal PDF, so Paperless may report a parse failure; what counts is that the file was picked up: `Consuming` appears in the log for each, or it moved to `failed`). If `newsub` stays and its files remain: the directory/file mode is too restrictive for uid 1000: `kubectl -n paperless exec deploy/paperless-ingest -c samba -- chmod -R a+rwX /shares/public` and note it in the follow-ups. The consume root and the migrated subfolders must be world-writable (the ingest pod's `consume-perms` initContainer and Task 8 Step 6 do it). If the FTP `put` is refused outright (not merely left unconsumed), the cause is the permissions: `kubectl -n paperless exec deploy/paperless-ingest -c samba -- chmod -R a+rwX /shares/public`. The user then scans a real page with the real scanner and checks that it appears; delete the test documents in the UI.
 
 - [ ] **Step 7: Update everything that used lab1's old address** (now `$LAB1_NEW`)
 
@@ -1617,7 +1669,7 @@ kubectl -n paperless scale deploy/paperless-ingest --replicas=0     # (suspend F
 ssh root@$LAB1_NEW "nmcli con mod ens18 +ipv4.addresses 192.168.1.28/22 && nmcli con up ens18"
 ssh root@192.168.1.28 'systemctl enable --now docker-compose@proftpd docker-compose@samba'
 ```
-(Paperless on lab1 can be resumed with `docker compose up -d` in `/docker/paperless`; its NFS volumes were not touched.)
+(Paperless on lab1 can be resumed with `docker compose up -d` in `/docker/paperless`; its NFS volumes were not touched.) While lab1's proftpd/samba are back but lab1's Paperless is stopped, scans pile up in lab1's consume folder: either restart lab1 Paperless (`docker compose up -d` in `/docker/paperless`) or copy the files over later.
 
 ---
 
@@ -1643,6 +1695,8 @@ sshpass -e ssh $SSH_OPTS "$NAS_USER@192.168.1.240" 'du -sh /share/MD0_DATA/Backu
 (Reuse `NAS_USER`/`SSHPASS`/`SSH_OPTS` from Task 0 Step 2; same-day runs write into the same dated folder, so the second `du` stays about the size of the first: that proves nothing is duplicated.) Expected: one dated snapshot, `offsite/` has `tree` and `db`.
 
 - [ ] **Step 3: Restore test into a scratch instance**
+
+Apply the memory gate first: `kubectl top nodes`; skip or defer this test if any node is above ~70 %, since it starts a second full stack.
 
 Import the NAS copy into a throwaway Postgres + Paperless pair in a scratch namespace, built from the same manifests with empty PVCs. Leave out the ingest pod and the NetworkAttachmentDefinition (they would claim `192.168.1.28`), the IngressRoute and the CronJob.
 
@@ -1672,9 +1726,18 @@ sshpass -e ssh $SSH_OPTS "$NAS_USER@192.168.1.240" 'tar -C /share/MD0_DATA/Paper
 kubectl -n $NS exec deploy/paperless -- document_importer /usr/src/paperless/export/import
 kubectl -n $NS exec paperless-db-0 -- psql -U paperless -tAc "select count(*) from documents_document"
 kubectl -n paperless exec paperless-db-0 -- psql -U paperless -tAc "select count(*) from documents_document"
+# Validate the dump as well (copy one dump from the NAS offsite/db/ and list it)
+sshpass -e ssh $SSH_OPTS "$NAS_USER@192.168.1.240" 'cat $(ls -1t /share/MD0_DATA/Paperless/offsite/db/paperless-*.dump | head -1)' > /tmp/claude-1000/-home-umueller-Workspace-k8s-homelab/1e0c7c91-7767-46d5-b0bb-4a67529663ca/scratchpad/restore.dump
+kubectl -n $NS cp /tmp/claude-1000/-home-umueller-Workspace-k8s-homelab/1e0c7c91-7767-46d5-b0bb-4a67529663ca/scratchpad/restore.dump paperless-db-0:/tmp/restore.dump
+kubectl -n $NS exec paperless-db-0 -- pg_restore -l /tmp/restore.dump | head
+# optionally restore into a scratch database
+kubectl -n $NS exec paperless-db-0 -- sh -c 'createdb -U paperless scratch && pg_restore -U paperless -d scratch /tmp/restore.dump && echo DUMP_RESTORE_OK'
 kubectl delete namespace $NS
+# The namespace deletion leaves the Released Retain PVs behind; their Longhorn volumes keep storage until deleted.
+kubectl get pv | grep paperless-restore-test
+kubectl delete pv <names from the line above>
 ```
-Expected: both counts are equal. (If the scratch pods cannot land on one node because of the RWO volumes, that is fine here: each scratch volume is used by one pod, except `paperless-consume` and `paperless-export`, which the single scratch webserver owns alone.)
+Expected: both counts are equal, `pg_restore -l` lists the dump's contents, and no `paperless-restore-test` PVs remain. (If the scratch pods cannot land on one node because of the RWO volumes, that is fine here: each scratch volume is used by one pod, except `paperless-consume` and `paperless-export`, which the single scratch webserver owns alone.)
 
 - [ ] **Step 4: MEGA cap check**
 
@@ -1700,7 +1763,7 @@ kubectl -n paperless exec deploy/paperless -- rm -rf /usr/src/paperless/export/i
 
 - [ ] **Step 1: Disable the lab1 units** (compose files and volumes stay for rollback)
 
-The user runs (or `! …`): `ssh root@$LAB1_NEW 'systemctl disable --now docker-compose@paperless docker-compose@proftpd docker-compose@samba'` (adjust unit names to `systemctl list-units "docker-compose@*"`). Verify: `ssh root@$LAB1_NEW 'docker ps --format "{{.Names}}"'` lists neither Paperless nor proftpd nor samba. `mega_io` and (until #171) InfluxDB stay.
+Paperless, proftpd and samba were already disabled in Task 8 Step 2 (proftpd/samba) and Step 2's Paperless stop. Verify: `ssh root@$LAB1_NEW 'systemctl is-enabled docker-compose@paperless docker-compose@proftpd docker-compose@samba'` prints `disabled` three times (adjust unit names to `systemctl list-units "docker-compose@*"`); disable any that is not. Verify: `ssh root@$LAB1_NEW 'docker ps --format "{{.Names}}"'` lists neither Paperless nor proftpd nor samba. `mega_io` and (until #171) InfluxDB stay.
 
 - [ ] **Step 2: Update #107 and #180**
 

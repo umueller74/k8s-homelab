@@ -49,6 +49,9 @@ used lab1's old address is updated. FTP and SMB credentials stay unchanged for t
 
 The ingest pod mounts `consume` together with the webserver. An RWO volume is enforced per node, so
 the pod is scheduled onto the webserver's node with `podAffinity`, as the php-apache backup job is.
+The ingest pod has a root initContainer that makes the consume root `0777`, and the webserver has a
+soft `podAffinity` to the ingest pod's node, so a webserver restart does not land elsewhere
+(Multi-Attach on the RWO consume volume).
 Both ingest containers write as uid/gid 33 (as on lab1) while Paperless consumes as 1000, so the
 consume tree stays world-writable.
 
@@ -62,12 +65,16 @@ files; proftpd and samba are pinned by digest to the images lab1 runs, Tika to i
 ## Access, secrets, mail
 
 - Traefik `IngressRoute` at `paperless.homelab.cs-ol.de`, wildcard certificate.
-- `*.sops.yaml` Secrets: Postgres password, `PAPERLESS_SECRET_KEY`, admin password, FTP and SMB
-  users, NAS backup credentials. All values are newly generated, none copied from lab1.
+- `*.sops.yaml` Secrets: Postgres password, `PAPERLESS_SECRET_KEY`, FTP and SMB users, NAS backup
+  credentials, `passwords.txt`. No admin user is created: the exported users are restored by the
+  import. The Postgres password and `PAPERLESS_SECRET_KEY` are new random values. The FTP/SMB
+  credentials, the NAS backup credentials (the existing QNAP backup user) and `passwords.txt` are
+  carried over unchanged, so no device has to be reconfigured.
 - Flux Kustomization `clusters/production/paperless.yaml`: SOPS decryption enabled,
   `dependsOn: infrastructure`, `wait: true`.
 - Mail through `smtp-relay.smtp-relay.svc.cluster.local:587`, sender `@cs-ol.de`.
-- Homepage: Paperless tile and widget repointed to the new URL after cutover; then
+- Homepage: Paperless tile and widget repointed to the new URL. The change is merged together with
+  the manifests, so the tile shows login errors until the import is done; then
   `kubectl -n homepage rollout restart deploy/homepage`.
 
 ## Backup (rsync to the NAS)
@@ -103,10 +110,11 @@ Follows the phase-2 recipe in #107.
 
 1. Merge with the app deployed empty. Check that every pod starts within its limits and that
    ownership/`fsGroup` is correct.
-2. Run `document_exporter` on lab1. Stop lab1 Paperless, proftpd and samba. Keep the compose files
-   on disk.
+2. Run `document_exporter` on lab1. Stop and disable (`systemctl disable --now`) lab1's Paperless,
+   proftpd and samba units so a reboot cannot start them. Keep the compose files on disk.
 3. Run `document_importer` in the cluster. Compare the document count and a sample of file
-   checksums against lab1's export.
+   checksums against lab1's export. Then copy lab1's consume backlog and folder tree into the
+   consume volume (after the import, so consumption does not run against an empty database).
 4. Give lab1 its new address (secondary address first, verify, then remove `.28`), scale the ingest
    pod up on `192.168.1.28`, test FTP and SMB drops (existing and new subfolder), then update the
    references to lab1's old address and Homepage.
