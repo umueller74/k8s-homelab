@@ -33,6 +33,24 @@ spec:
                 matchLabels:
                   app: paperless
               topologyKey: kubernetes.io/hostname
+      initContainers:
+        # lab1's consume tree is world-writable; uid 33 (ftp/smb) writes,
+        # uid 1000 (Paperless) consumes. A fresh volume root is 0755.
+        - name: consume-perms
+          image: alpine:3.22
+          command: ['sh', '-c', 'chmod 0777 /consume']
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              cpu: 50m
+              memory: 16Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: consume
+              mountPath: /consume
       containers:
         - name: proftpd
           image: kibatic/proftpd@sha256:6f3d8dc449720be2c098bdf4a9b5f07ce6ec3a7df9cd80aff9a74607b23aee65

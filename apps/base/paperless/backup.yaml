@@ -24,6 +24,8 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 2
+      # A Pending job (webserver absent) must not block later runs.
+      activeDeadlineSeconds: 7200
       template:
         spec:
           restartPolicy: OnFailure
@@ -52,6 +54,12 @@ spec:
                 - configMapRef:
                     name: paperless-env
               env:
+                # The command replaces the image's /init (s6), so the
+                # document_exporter wrapper's with-contenv would look for
+                # /run/s6/container_environment and wipe the environment.
+                # S6_KEEP_ENV makes it pass the environment through.
+                - name: S6_KEEP_ENV
+                  value: '1'
                 - name: PAPERLESS_DBPASS
                   valueFrom:
                     secretKeyRef:

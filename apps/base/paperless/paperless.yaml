@@ -26,6 +26,18 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      # Soft preference: follow the ingest pod, which shares the RWO consume
+      # volume and is pinned to the webserver's node by a required affinity.
+      # Without it a restart can land elsewhere (Multi-Attach).
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: paperless-ingest
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: paperless
           image: ghcr.io/paperless-ngx/paperless-ngx:3.0.4
