@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paperless-env
+  namespace: paperless
+data:
+  PAPERLESS_URL: https://paperless.homelab.cs-ol.de
+  PAPERLESS_TIME_ZONE: Europe/Berlin
+  PAPERLESS_OCR_LANGUAGE: deu
+  PAPERLESS_OCR_LANGUAGES: eng
+  PAPERLESS_OCR_OUTPUT_TYPE: pdfa
+  PAPERLESS_OCR_CLEAN: clean
+  PAPERLESS_OCR_DESKEW: 'true'
+  PAPERLESS_REDIS: redis://paperless-redis:6379
+  PAPERLESS_DBHOST: paperless-db
+  PAPERLESS_TIKA_ENABLED: '1'
+  PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://paperless-gotenberg:3000
+  PAPERLESS_TIKA_ENDPOINT: http://paperless-tika:9998
+  PAPERLESS_CONSUMER_RECURSIVE: 'true'
+  PAPERLESS_PRE_CONSUME_SCRIPT: /usr/src/paperless/scripts/removepassword.py
+  PAPERLESS_EMAIL_HOST: smtp-relay.smtp-relay.svc.cluster.local
+  PAPERLESS_EMAIL_PORT: '587'
+  PAPERLESS_EMAIL_FROM: paperless@cs-ol.de
+---
+# Pre-consume hook: unlocks encrypted PDFs with the passwords in
+# passwords.txt (a SOPS Secret, mounted next to it) and extracts PDF
+# attachments into the consume folder.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paperless-scripts
+  namespace: paperless
+data:
+  removepassword.py: |
+    #!/usr/bin/env python3
+
+    import os
+    import pikepdf
+
+
+    def is_pdf(file_path: str) -> bool:
+        return os.path.splitext(file_path.lower())[1] == ".pdf"
+
+
+    def is_pdf_encrypted(file_path: str) -> bool:
+        try:
+            with pikepdf.open(file_path) as pdf:
+                return pdf.is_encrypted
+        except:
+            return True
+
+
+    def pdf_has_attachments(file_path: str) -> bool:
+        try:
+            with pikepdf.open(file_path) as pdf:
+                return len(pdf.attachments) > 0
+        except:
+            return False
+
+
+    def unlock_pdf(file_path: str):
+        password = None
+        print("reading passwords")
+        with open(pass_file_path, "r") as f:
+            passwords = f.readlines()
+        for p in passwords:
+            password = p.strip()
+            try:
+                with pikepdf.open(
+                    file_path, password=password, allow_overwriting_input=True
+                ) as pdf:
+                    # print("password is working")
+                    print("unlocked succesfully")
+                    pdf.save(file_path, deterministic_id=True)
+                    break
+            except pikepdf.PasswordError:
+                print("password is not working")
+                continue
+        if password is None:
+            print("empty password file")
+
+
+    def extract_pdf_attachments(file_path: str):
+        with pikepdf.open(file_path) as pdf:
+            ats = pdf.attachments
+            for atm in ats:
+                trg_filename = ats.get(atm).filename
+                if is_pdf(trg_filename):
+                    trg_file_path = os.path.join(consume_path, trg_filename)
+                    try:
+                        with open(trg_file_path, "wb") as wb:
+                            wb.write(ats.get(atm).obj["/EF"]["/F"].read_bytes())
+                            print("saved: ", trg_file_path)
+                    except:
+                        print("error ", trg_file_path)
+                        continue
+                else:
+                    print("skipped: ", trg_filename)
+
+    src_file_path = os.environ.get('DOCUMENT_WORKING_PATH')
+    pass_file_path = "/usr/src/paperless/scripts/passwords.txt"
+    consume_path = "/usr/src/paperless/consume/"
+
+    if src_file_path is None:
+        print("no file path")
+        exit(0)
+
+    if not is_pdf(src_file_path):
+        print("not pdf")
+        exit(0)
+
+    if is_pdf_encrypted(src_file_path):
+        print("decrypting pdf")
+        unlock_pdf(src_file_path)
+    else:
+        print("not encrypted")
+
+    if pdf_has_attachments(src_file_path):
+        print("getting attachments")
+        extract_pdf_attachments(src_file_path)
+    else:
+        print("no attachments")

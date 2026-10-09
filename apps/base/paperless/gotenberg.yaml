@@ -1,0 +1,58 @@
+# Converts Office files and .eml to PDF. Same flags as lab1: no JavaScript and
+# no external content (tracking pixels) when rendering mail.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-gotenberg
+  namespace: paperless
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-gotenberg
+  template:
+    metadata:
+      labels:
+        app: paperless-gotenberg
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: gotenberg
+          image: docker.io/gotenberg/gotenberg:8.20
+          # args, not command: keeps the image ENTRYPOINT (tini) as PID 1 to reap children.
+          args:
+            - gotenberg
+            - --chromium-disable-javascript=true
+            - --chromium-allow-list=file:///tmp/.*
+          ports:
+            - name: http
+              containerPort: 3000
+          resources:
+            requests:
+              cpu: 20m
+              memory: 192Mi
+            limits:
+              cpu: '1'
+              memory: 768Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-gotenberg
+  namespace: paperless
+spec:
+  selector:
+    app: paperless-gotenberg
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

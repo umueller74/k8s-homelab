@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - pvc.yaml
+  - config.yaml
+  - postgres.yaml
+  - redis.yaml
+  - gotenberg.yaml
+  - tika.yaml
+  - paperless.yaml
+  - ingressroute.yaml
+  - networkattachment.yaml
+  - ingest.yaml
+  - known-hosts.yaml
+  - backup.yaml
+  - prometheusrule.yaml

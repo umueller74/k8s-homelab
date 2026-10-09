@@ -1,0 +1,54 @@
+# longhorn-retain, not the default class: an accidental Kustomization delete
+# must not take the documents with it. `export` is rebuildable (staging for
+# the backup and for the one-time import), so it uses the default class.
+#
+# On lab1 (2026-10-09): data 205 MB, media 457 MB.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-data
+  namespace: paperless
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-media
+  namespace: paperless
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Shared by the webserver and the ingest pod (FTP/SMB), which are scheduled onto
+# the same node.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-consume
+  namespace: paperless
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-export
+  namespace: paperless
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi

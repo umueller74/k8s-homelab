@@ -1,0 +1,203 @@
+# Nightly: (1) document_exporter into a staging tree on the export PVC,
+# (2) pg_dump next to it, (3) rsync to the NAS twice:
+#   - history: /Backup/paperless/<date>/, hardlinked to the previous snapshot,
+#     newest 14 kept;
+#   - mirror:  /Paperless/offsite/, a single copy. mega_io syncs the whole
+#     Paperless share to MEGA, so the hardlinked history stays outside it
+#     (rclone/megacmd would upload every hardlink as a separate file and blow
+#     the 20 GB cap).
+# The exporter skips unchanged files by itself; -d removes files of deleted
+# documents. The job runs on the webserver's node (RWO volumes).
+# The exporter takes a lock file in media and writes its logs under data, so
+# both are mounted read-write (RWO, same node as the webserver).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: paperless-backup
+  namespace: paperless
+spec:
+  schedule: '30 3 * * *'
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      # A Pending job (webserver absent) must not block later runs.
+      activeDeadlineSeconds: 7200
+      template:
+        spec:
+          restartPolicy: OnFailure
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: paperless
+                  topologyKey: kubernetes.io/hostname
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: export
+              image: ghcr.io/paperless-ngx/paperless-ngx:3.0.4
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  mkdir -p /usr/src/paperless/export/backup/tree /usr/src/paperless/export/backup/db
+                  chown -R 1000:1000 /usr/src/paperless/export/backup
+                  document_exporter /usr/src/paperless/export/backup/tree -d --no-progress-bar
+              envFrom:
+                - configMapRef:
+                    name: paperless-env
+              env:
+                # The command replaces the image's /init (s6), so the
+                # document_exporter wrapper's with-contenv would look for
+                # /run/s6/container_environment and wipe the environment.
+                # S6_KEEP_ENV makes it pass the environment through.
+                - name: S6_KEEP_ENV
+                  value: '1'
+                - name: PAPERLESS_DBPASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-secrets
+                      key: PAPERLESS_DBPASS
+                - name: PAPERLESS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-secrets
+                      key: PAPERLESS_SECRET_KEY
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: '1'
+                  memory: 1Gi
+              volumeMounts:
+                - name: data
+                  mountPath: /usr/src/paperless/data
+                - name: media
+                  mountPath: /usr/src/paperless/media
+                - name: export
+                  mountPath: /usr/src/paperless/export
+            - name: dump
+              image: postgres:17
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  rm -f /export/backup/db/*.tmp
+                  OUT=/export/backup/db/paperless-$(date -u +%Y-%m-%d).dump
+                  pg_dump -h paperless-db -U paperless -Fc -f "$OUT.tmp" paperless
+                  pg_restore -l "$OUT.tmp" >/dev/null
+                  [ "$(wc -c < "$OUT.tmp")" -gt 1000 ] || { echo "FATAL: dump implausibly small" >&2; exit 1; }
+                  mv "$OUT.tmp" "$OUT"
+                  # Keep the newest three dumps in the staging area.
+                  ls -1t /export/backup/db/paperless-*.dump | sed -n '4,$p' | xargs -r rm -f
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-secrets
+                      key: POSTGRES_PASSWORD
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              volumeMounts:
+                - name: export
+                  mountPath: /export
+          containers:
+            - name: rsync
+              image: alpine:3.22
+              env:
+                - name: KEEP
+                  value: '14'
+                - name: NAS_HOST
+                  value: '192.168.1.240'
+                - name: HIST
+                  value: /share/MD0_DATA/Backup/paperless
+                - name: OFFSITE
+                  value: /share/MD0_DATA/Paperless/offsite
+                - name: NAS_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-backup-nas
+                      key: username
+                # sshpass -e reads the password from SSHPASS, keeping it off
+                # the command line and out of the process list.
+                - name: SSHPASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-backup-nas
+                      key: password
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  apk add --no-cache openssh-client sshpass rsync >/dev/null
+
+                  SRC=/export/backup
+                  [ -s "$SRC/tree/manifest.json" ] || { echo "FATAL: no manifest.json in the export" >&2; exit 1; }
+                  KB=$(du -sk "$SRC/tree" | cut -f1)
+                  [ "$KB" -gt 1024 ] || { echo "FATAL: export implausibly small (${KB} KB)" >&2; exit 1; }
+                  ls "$SRC"/db/paperless-*.dump >/dev/null
+
+                  # The NAS runs OpenSSH 7.6 with an ssh-rsa host key only.
+                  SSH_OPTS="-o UserKnownHostsFile=/etc/nas/known_hosts -o StrictHostKeyChecking=yes -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa"
+                  RSH="sshpass -e ssh $SSH_OPTS"
+                  NAS="${NAS_USER}@${NAS_HOST}"
+                  STAMP=$(date -u +%Y-%m-%d)
+
+                  $RSH "$NAS" "mkdir -p '$HIST' '$OFFSITE'"
+
+                  # Newest earlier snapshot, for --link-dest.
+                  PREV=$($RSH "$NAS" "ls -1d '$HIST'/20* 2>/dev/null | grep -v '/$STAMP\$' | sort | tail -1" || true)
+                  LINK=""
+                  [ -z "$PREV" ] || LINK="--link-dest=$PREV"
+
+                  rsync -a --no-owner --no-group $LINK -e "$RSH" "$SRC/" "$NAS:$HIST/$STAMP/"
+                  rsync -a --no-owner --no-group --delete -e "$RSH" "$SRC/" "$NAS:$OFFSITE/"
+
+                  # Keep the newest $KEEP snapshots.
+                  $RSH "$NAS" "cd '$HIST' && ls -1d 20* | sort -r | sed -n '$((KEEP + 1)),\$p' | while read -r d; do rm -rf \"\$d\"; done"
+
+                  echo "Backed up ${KB} KB to ${NAS_HOST}:${HIST}/${STAMP} and ${OFFSITE}"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - name: export
+                  mountPath: /export
+                  readOnly: true
+                - name: known-hosts
+                  mountPath: /etc/nas
+                  readOnly: true
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: paperless-data
+            - name: media
+              persistentVolumeClaim:
+                claimName: paperless-media
+            - name: export
+              persistentVolumeClaim:
+                claimName: paperless-export
+            - name: known-hosts
+              configMap:
+                name: paperless-backup-known-hosts

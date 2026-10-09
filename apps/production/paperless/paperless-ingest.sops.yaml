@@ -1,0 +1,23 @@
+apiVersion: v1
+data:
+    FTP_LIST: ENC[AES256_GCM,data:OF+qMNlA02kkZ0PRgz/K3Cda04rxiFla74vycQ==,iv:XkOenl6sA9yObkBhlx1IIgS3NCqag/ztvC2OtU7gSc8=,tag:1raal6sEjoEqUC6ddmkDOg==,type:str]
+    SMB_PASSWORD: ENC[AES256_GCM,data:rnXz8Gz/tFvSl/qM,iv:cth0sIFzpKNtXQgYUg+UE75QHOXyUevGZdsTv0jL8B8=,tag:LeyMzZZYbQHFvDMeZPrF/A==,type:str]
+kind: Secret
+metadata:
+    name: paperless-ingest
+    namespace: paperless
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB3blpoNUZMaGNNSE9KK25L
+            S21MNkZ2eEdmNW4ycTUzNWlFYlhmdXI3ZmlZClhJajk1bG9aclNVRzUxeG9NRksw
+            YldBOWR4c2M2RjJtazczYVI4VUpLQUUKLS0tIGdBTExDWWZwSXB2K0pITHk4WWhC
+            SzdHQ2VOaHF3Rk5MSmNpZ2dLN2lYM28KlWeF9l0Z3fYDKSpTdVX8dgAuKjENejCl
+            Hun2Z+NrwDBIENOhaj1dxQZJ6r0XHp7VACjToaBI88Tji2VLJJwCIw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-09T20:48:41Z"
+    mac: ENC[AES256_GCM,data:M8erVhmsLcGXHm/sMAIEbuy2puNTH6fhs+Z0LJcUIzQPTGktkc9GVamgCzn71xnlKDfimuTOV0DFKbUaZe6tZ13vpND0GzW2DEgThlP3qMbM6S71HZRETcLSVj0XYCrjkmMsQxO2nU1bxs+78xg39MC8DCBZvgH53apuDhgKRWc=,iv:rqgyuoGWthWQKnobuV6jReyoH1Wn3tqA38CpXmIHzvU=,tag:QBSen482KzNYf48tfvJFDA==,type:str]
+    version: 3.13.3

@@ -1,0 +1,128 @@
+# Scanner ingest: proftpd (FTP, passive 50000-50100) and samba (SMB, the
+# "Public" share) write into the consume folder that Paperless watches. One pod
+# with one LAN address, so both protocols share 192.168.1.28.
+#
+# replicas: 0 until lab1 has released 192.168.1.28 (cutover runbook).
+#
+# Both containers write as uid/gid 33 (as on lab1); Paperless consumes as 1000,
+# so the consume tree must stay world-writable, as it is on lab1.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-ingest
+  namespace: paperless
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: paperless-ingest
+  template:
+    metadata:
+      labels:
+        app: paperless-ingest
+      annotations:
+        k8s.v1.cni.cncf.io/networks: paperless/lan-macvlan
+    spec:
+      # consume is RWO: run on the node where the webserver has it attached.
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: paperless
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        # lab1's consume tree is world-writable; uid 33 (ftp/smb) writes,
+        # uid 1000 (Paperless) consumes. A fresh volume root is 0755.
+        - name: consume-perms
+          image: alpine:3.22
+          command: ['sh', '-c', 'chmod 0777 /consume']
+          resources:
+            requests:
+              cpu: 5m
+              memory: 8Mi
+            limits:
+              cpu: 50m
+              memory: 16Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: consume
+              mountPath: /consume
+      containers:
+        - name: proftpd
+          image: kibatic/proftpd@sha256:6f3d8dc449720be2c098bdf4a9b5f07ce6ec3a7df9cd80aff9a74607b23aee65
+          env:
+            - name: FTP_LIST
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-ingest
+                  key: FTP_LIST
+            - name: USERADD_OPTIONS
+              value: -o --gid 33 --uid 33
+            - name: PASSIVE_MIN_PORT
+              value: '50000'
+            - name: PASSIVE_MAX_PORT
+              value: '50100'
+            - name: MASQUERADE_ADDRESS
+              value: 192.168.1.28
+          ports:
+            - name: ftp
+              containerPort: 21
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            tcpSocket:
+              port: ftp
+            periodSeconds: 15
+          volumeMounts:
+            - name: consume
+              mountPath: /home/paperless
+        - name: samba
+          image: ghcr.io/servercontainers/samba@sha256:155d384c4e3948f84ab8126647877bb409d7882a04173952bddf78fa547e1f9b
+          env:
+            - name: MODEL
+              value: TimeCapsule
+            - name: AVAHI_NAME
+              value: paperless-scan
+            - name: SAMBA_CONF_LOG_LEVEL
+              value: '3'
+            - name: GROUP_family
+              value: '33'
+            - name: UID_paperless
+              value: '33'
+            - name: ACCOUNT_paperless
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-ingest
+                  key: SMB_PASSWORD
+            - name: SAMBA_VOLUME_CONFIG_public
+              value: '[Public]; path=/shares/public; guest ok = yes; read only = no; browseable = yes; force group = family;'
+          ports:
+            - name: smb
+              containerPort: 445
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            tcpSocket:
+              port: smb
+            periodSeconds: 15
+          volumeMounts:
+            - name: consume
+              mountPath: /shares/public
+      volumes:
+        - name: consume
+          persistentVolumeClaim:
+            claimName: paperless-consume

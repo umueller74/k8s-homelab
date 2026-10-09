@@ -1,0 +1,89 @@
+# Postgres 17, the same major version as lab1, so the move does not include a
+# major upgrade. PGDATA is a subdirectory because a fresh Longhorn volume has a
+# lost+found directory in its root, which initdb refuses.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: paperless-db
+  namespace: paperless
+spec:
+  serviceName: paperless-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-db
+  template:
+    metadata:
+      labels:
+        app: paperless-db
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:17
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: paperless
+            - name: POSTGRES_USER
+              value: paperless
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-secrets
+                  key: POSTGRES_PASSWORD
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, paperless, -d, paperless]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: [pg_isready, -U, paperless, -d, paperless]
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: longhorn-retain
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-db
+  namespace: paperless
+spec:
+  selector:
+    app: paperless-db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
