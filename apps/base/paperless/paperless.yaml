@@ -1,0 +1,125 @@
+# No PAPERLESS_ADMIN_USER/PASSWORD on purpose: document_importer refuses a
+# non-empty database, and the exported users (with their password hashes) are
+# restored by the import. See the cutover tasks.
+#
+# The image starts as root (s6) and drops to uid/gid 1000 itself, so no
+# runAsNonRoot here. It also chowns the mount roots at start, which is why every
+# volume must be verified before the first start (see #107).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless
+  namespace: paperless
+spec:
+  replicas: 1
+  # RWO volumes: the old pod must be gone before the new one mounts them.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: paperless
+  template:
+    metadata:
+      labels:
+        app: paperless
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: paperless
+          image: ghcr.io/paperless-ngx/paperless-ngx:3.0.4
+          envFrom:
+            - configMapRef:
+                name: paperless-env
+          env:
+            - name: PAPERLESS_DBPASS
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-secrets
+                  key: PAPERLESS_DBPASS
+            - name: PAPERLESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paperless-secrets
+                  key: PAPERLESS_SECRET_KEY
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            requests:
+              cpu: 200m
+              memory: 768Mi
+            limits:
+              cpu: '2'
+              memory: 2Gi
+          # Migrations and the first start take minutes.
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /accounts/login/
+              port: http
+            periodSeconds: 15
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            failureThreshold: 4
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: data
+              mountPath: /usr/src/paperless/data
+            - name: media
+              mountPath: /usr/src/paperless/media
+            - name: consume
+              mountPath: /usr/src/paperless/consume
+            - name: export
+              mountPath: /usr/src/paperless/export
+            - name: scripts
+              mountPath: /usr/src/paperless/scripts/removepassword.py
+              subPath: removepassword.py
+              readOnly: true
+            - name: passwords
+              mountPath: /usr/src/paperless/scripts/passwords.txt
+              subPath: passwords.txt
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: paperless-data
+        - name: media
+          persistentVolumeClaim:
+            claimName: paperless-media
+        - name: consume
+          persistentVolumeClaim:
+            claimName: paperless-consume
+        - name: export
+          persistentVolumeClaim:
+            claimName: paperless-export
+        - name: scripts
+          configMap:
+            name: paperless-scripts
+            defaultMode: 0755
+        - name: passwords
+          secret:
+            secretName: paperless-passwords
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless
+  namespace: paperless
+  labels:
+    app: paperless
+spec:
+  selector:
+    app: paperless
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

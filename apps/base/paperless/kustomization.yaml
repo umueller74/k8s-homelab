@@ -8,3 +8,5 @@ resources:
   - redis.yaml
   - gotenberg.yaml
   - tika.yaml
+  - paperless.yaml
+  - ingressroute.yaml
