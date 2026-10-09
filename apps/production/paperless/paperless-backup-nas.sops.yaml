@@ -1,0 +1,23 @@
+apiVersion: v1
+data:
+    password: ENC[AES256_GCM,data:UwGZQywtm/C7y4uZ,iv:Lbhubn8egzku9GnCezd4iNvVyBxvaV0h72+ucwwKawM=,tag:b55Mg0Z81xpxaP0LsrqR+g==,type:str]
+    username: ENC[AES256_GCM,data:EKi40PKxeck=,iv:f8IedVMW+ObFwXv5lTrNiPLuadw8UdQuZ3hnos5uhHw=,tag:vXOg/a1Rf+UiACAbtq4FCg==,type:str]
+kind: Secret
+metadata:
+    name: paperless-backup-nas
+    namespace: paperless
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBzMHhQTUttTVVrNk1NaU9p
+            Rk1JenZOTmg1V3FveWtUbHFyYStOTHpxWjM0CnEzL1UzelFseDRrendEWFZUeWdF
+            MmcxWVdxYVlKWDZpWUs1aVk1Q3FYMzgKLS0tIGNxbGk1MHkremxoTmRUQkY1Qkdy
+            UUJkcC9PUDk4YU12Q0JWMGFQM0lLMHMKYueUvqZ7JMQx/3q0H6ZgJk+PW2YMhISs
+            7ICIxf4rB9hD1NWPyOsuSr1HENyyT/GbvPCkAxpbYEyH2Jl/J5cA4g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-09T20:48:41Z"
+    mac: ENC[AES256_GCM,data:G4mPAl9GVVKZfnEEO1aITgfYRbyeoGskGvET27c2jDlR6lSnQYwxo9HUqtYBKCj2kxQ5sRtBZEAlOtHupG2s33M5MGXVKeSNL58YHv4sEwKSdDavkhfnlhtmxWQBt2XSyDX3/f4uKJkySTU+kDZJumvleCS8jV98KBLpmthp6kE=,iv:a579PiYO4pFg1DgC2UrF86maGuUtBDNhkCkhZcqTQio=,tag:CvBDKlrZ3FAJk6+QjZpxsQ==,type:str]
+    version: 3.13.3
