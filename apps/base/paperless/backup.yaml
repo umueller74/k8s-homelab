@@ -8,6 +8,8 @@
 #     the 20 GB cap).
 # The exporter skips unchanged files by itself; -d removes files of deleted
 # documents. The job runs on the webserver's node (RWO volumes).
+# The exporter takes a lock file in media and writes its logs under data, so
+# both are mounted read-write (RWO, same node as the webserver).
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -70,10 +72,8 @@ spec:
               volumeMounts:
                 - name: data
                   mountPath: /usr/src/paperless/data
-                  readOnly: true
                 - name: media
                   mountPath: /usr/src/paperless/media
-                  readOnly: true
                 - name: export
                   mountPath: /usr/src/paperless/export
             - name: dump
@@ -83,11 +83,14 @@ spec:
                 - -c
                 - |
                   set -eu
-                  OUT=/export/backup/db/paperless-$(date -u +%Y-%m-%d).sql.gz
-                  pg_dump -h paperless-db -U paperless paperless | gzip > "$OUT"
-                  [ "$(wc -c < "$OUT")" -gt 1000 ] || { echo "FATAL: dump implausibly small" >&2; exit 1; }
+                  rm -f /export/backup/db/*.tmp
+                  OUT=/export/backup/db/paperless-$(date -u +%Y-%m-%d).dump
+                  pg_dump -h paperless-db -U paperless -Fc -f "$OUT.tmp" paperless
+                  pg_restore -l "$OUT.tmp" >/dev/null
+                  [ "$(wc -c < "$OUT.tmp")" -gt 1000 ] || { echo "FATAL: dump implausibly small" >&2; exit 1; }
+                  mv "$OUT.tmp" "$OUT"
                   # Keep the newest three dumps in the staging area.
-                  ls -1t /export/backup/db/paperless-*.sql.gz | sed -n '4,$p' | xargs -r rm -f
+                  ls -1t /export/backup/db/paperless-*.dump | sed -n '4,$p' | xargs -r rm -f
               env:
                 - name: PGPASSWORD
                   valueFrom:
@@ -139,7 +142,7 @@ spec:
                   [ -s "$SRC/tree/manifest.json" ] || { echo "FATAL: no manifest.json in the export" >&2; exit 1; }
                   KB=$(du -sk "$SRC/tree" | cut -f1)
                   [ "$KB" -gt 1024 ] || { echo "FATAL: export implausibly small (${KB} KB)" >&2; exit 1; }
-                  ls "$SRC"/db/paperless-*.sql.gz >/dev/null
+                  ls "$SRC"/db/paperless-*.dump >/dev/null
 
                   # The NAS runs OpenSSH 7.6 with an ssh-rsa host key only.
                   SSH_OPTS="-o UserKnownHostsFile=/etc/nas/known_hosts -o StrictHostKeyChecking=yes -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa"
