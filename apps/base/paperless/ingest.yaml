@@ -2,7 +2,7 @@
 # "Public" share) write into the consume folder that Paperless watches. One pod
 # with one LAN address, so both protocols share 192.168.1.28.
 #
-# replicas: 0 until lab1 has released 192.168.1.28 (cutover runbook).
+# lab1 released 192.168.1.28 on 2026-10-10 (moved to 192.168.1.64); the pod owns it now.
 #
 # Both containers write as uid/gid 33 (as on lab1); Paperless consumes as 1000,
 # so the consume tree must stay world-writable, as it is on lab1.
@@ -12,7 +12,7 @@ metadata:
   name: paperless-ingest
   namespace: paperless
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -54,6 +54,13 @@ spec:
       containers:
         - name: proftpd
           image: kibatic/proftpd@sha256:6f3d8dc449720be2c098bdf4a9b5f07ce6ec3a7df9cd80aff9a74607b23aee65
+          # The image entrypoint runs `chown paperless:paperless` after
+          # `useradd --gid 33`, which creates no group named paperless, so a fresh
+          # container exits 1. Create that group (same gid 33) first.
+          command:
+            - bash
+            - -c
+            - groupadd -o -g 33 paperless && exec /usr/local/sbin/docker-entrypoint.sh proftpd --nodaemon
           env:
             - name: FTP_LIST
               valueFrom:
