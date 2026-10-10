@@ -669,6 +669,11 @@ spec:
       labels:
         app: paperless
     spec:
+      # The Service is called `paperless`, so Kubernetes would inject
+      # PAPERLESS_PORT=tcp://<ip>:8000, which collides with Paperless's own
+      # PAPERLESS_PORT setting and makes granian refuse to start
+      # ("Invalid value for '--port'").
+      enableServiceLinks: false
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -1070,6 +1075,8 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          # Same image and env as the webserver: do not inject PAPERLESS_PORT=tcp://...
+          enableServiceLinks: false
           affinity:
             podAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:

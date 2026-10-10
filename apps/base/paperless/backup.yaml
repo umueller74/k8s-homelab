@@ -29,6 +29,8 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          # Same image and env as the webserver: do not inject PAPERLESS_PORT=tcp://...
+          enableServiceLinks: false
           affinity:
             podAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
