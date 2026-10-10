@@ -9,9 +9,7 @@ metadata:
     gethomepage.dev/description: AI agent (Telegram, Discord)
     gethomepage.dev/group: Primary Services
     gethomepage.dev/icon: mdi-robot-happy
-    gethomepage.dev/app: hermes-agent
     gethomepage.dev/name: Hermes Agent
-    gethomepage.dev/pod-selector: ''
     gethomepage.dev/weight: '30'
 spec:
   entryPoints:

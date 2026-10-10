@@ -1,3 +1,5 @@
+# Hermes Agent runs natively on raspi2 (homelab role hermes-agent), not in the
+# cluster. No selector: the EndpointSlice next to this file supplies the backend.
 apiVersion: v1
 kind: Service
 metadata:
@@ -5,14 +7,8 @@ metadata:
   namespace: hermes-agent
 spec:
   type: ClusterIP
-  selector:
-    app: hermes-agent
   ports:
     - name: dashboard
       protocol: TCP
       port: 80
-      targetPort: dashboard
-    - name: api
-      protocol: TCP
-      port: 8642
-      targetPort: api
+      targetPort: 9119
