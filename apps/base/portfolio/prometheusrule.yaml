@@ -1,0 +1,32 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: portfolio
+  namespace: portfolio
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: portfolio
+      rules:
+        - alert: PortfolioDown
+          expr: |
+            up{namespace="portfolio", service="portfolio"} == 0
+              or absent(up{namespace="portfolio", service="portfolio"})
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Portfolio dashboard unreachable
+
+        - alert: PortfolioDataStale
+          expr: time() - portfolio_last_ingest_timestamp_seconds{namespace="portfolio"} > 36 * 3600
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Portfolio data is older than 36 hours
+            description: >-
+              The fetcher on raspi2 has not delivered data. Check
+              `systemctl status portfolio-fetcher` there; if the log says the
+              token was rejected, log in again with `hermes mcp login scalable`.

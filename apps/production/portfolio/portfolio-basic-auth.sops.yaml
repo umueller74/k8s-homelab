@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: portfolio-basic-auth
+    namespace: portfolio
+stringData:
+    users: ENC[AES256_GCM,data:J9q9i8xJPm26d88CNlxFw/lwwxAqG/6PXOms36jvcds2TOQK3gHeFmI=,iv:KAMEcuJEZCb3waU7VO9FftcKgu9VUU0vC+i4+Co5S+w=,tag:hGznV9pKCKH5eiia7EZE9Q==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBxeTUvcmMvZWlRT0ZpSjZK
+            MkcrWUtwN1RyWHZ0a0lxbkI5eHVkSmdrSUYwCkNqRk4xUWQ3cExOV3MrbWwyOGVm
+            V25Hait3dGsycW9UOFYxWXJoRE9tSEkKLS0tIG9jZnI0cHRQem03SlFtTzFFSGVG
+            NzZRa2Npa2crRWE4d0hKVnZCU3p5NXcKYAa56tFujJ67fygT1v2//fOH8qxVknbq
+            A/Arf4DtJN5ZyO1cZ2GyvqzHcW92TlqjPdTGvBN8HB+w/TILoUnzVQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-11T17:08:18Z"
+    mac: ENC[AES256_GCM,data:zOS78W9b7KZNZJ+3e0w01YaFAk5pUPk8hGCQYEYsjy/Bag6BMCxV3xdL/IQf4l7vLQGcpWce73ki+d6vM5GrdNpM9NTBHaF855wSadU62/GY1xsUO0bMt6a4Wz9AA/3XeSVZMIoBCwa3ADeSyyJwziWyhSjbWeDwDZ3zl6Li/uU=,iv:gcNaK6dwpNuEwt0QOeHKNUu/DoWrq4VuRWp9yaHx1M0=,tag:MAf7kA+vEecik/cKCicOrQ==,type:str]
+    version: 3.13.3

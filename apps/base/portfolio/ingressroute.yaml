@@ -1,0 +1,35 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: portfolio
+  namespace: portfolio
+  annotations:
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/href: 'https://portfolio.homelab.cs-ol.de'
+    gethomepage.dev/name: Portfolio
+    gethomepage.dev/description: ETF portfolio from Scalable Capital
+    gethomepage.dev/group: Primary Services
+    gethomepage.dev/icon: mdi-chart-line
+    gethomepage.dev/weight: '40'
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # Bearer-token API (ingest, backup): no basicAuth, the app checks the token itself.
+    - kind: Rule
+      priority: 20
+      match: Host(`portfolio.homelab.cs-ol.de`) && PathPrefix(`/api`)
+      services:
+        - kind: Service
+          name: portfolio
+          port: 8000
+    - kind: Rule
+      priority: 10
+      match: Host(`portfolio.homelab.cs-ol.de`)
+      middlewares:
+        - name: basic-auth
+      services:
+        - kind: Service
+          name: portfolio
+          port: 8000
+  tls: {}
