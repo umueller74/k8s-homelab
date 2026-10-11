@@ -12,7 +12,7 @@ metadata:
     gethomepage.dev/name: Hermes Agent
     gethomepage.dev/app: hermes-agent
     gethomepage.dev/pod-selector: ''
-    gethomepage.dev/siteMonitor: 'http://hermes-agent.hermes-agent.svc.cluster.local'
+    gethomepage.dev/siteMonitor: 'https://hermes.homelab.cs-ol.de'
     gethomepage.dev/weight: '30'
 spec:
   entryPoints:
