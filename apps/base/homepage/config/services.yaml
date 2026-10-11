@@ -1,0 +1,106 @@
+- Primary Services:
+    - Unifi Controller @ UDM Pro:
+        href: https://192.168.0.1/
+        description: Control your home
+        icon: unifi.png
+        siteMonitor: https://192.168.0.1
+        widget:
+            type: unifi
+            url: https://192.168.0.1
+            username: homepage
+            password: '{{HOMEPAGE_VAR_UNIFI_PASSWORD}}'
+    - Paperless:
+        href: https://paperless.homelab.cs-ol.de/
+        icon: paperless.png
+        siteMonitor: http://paperless.paperless.svc.cluster.local:8000/accounts/login/
+        widget:
+            type: paperlessngx
+            url: http://paperless.paperless.svc.cluster.local:8000/
+            username: mueller
+            password: '{{HOMEPAGE_VAR_PAPERLESS_PASSWORD}}'
+    - Proxmox Macmini:
+        href: https://192.168.1.27:8006/
+        icon: proxmox.png
+        widget:
+            type: proxmox
+            url: https://192.168.1.27:8006
+            username: root@pam!homepage
+            password: '{{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}'
+            cluster: homelab
+
+    - Proxmox Acemagic:
+        href: https://192.168.1.24:8006/
+        icon: proxmox.png
+
+- Code:
+    - QNAP:
+        href: http://192.168.1.240/
+        siteMonitor: http://192.168.1.240/
+        icon: qnap.png
+        widget:
+            type: qnap
+            url: http://192.168.1.240:8080
+            username: mueller
+            password: '{{HOMEPAGE_VAR_QNAP_PASSWORD}}'
+- Home Automation:
+    - Octoprint:
+        href: http://192.168.1.177/
+        siteMonitor: http://192.168.1.177/
+        icon: octoprint.png
+        widget:
+            type: octoprint
+            url: http://192.168.1.177
+            key: '{{HOMEPAGE_VAR_OCTOPRINT_KEY}}'
+
+- Infrastructure:
+    - PiHole:
+        href: https://pihole.homelab.cs-ol.de/admin
+        description: PiHole
+        icon: si-pihole.png
+        widget:
+            type: pihole
+            url: https://pihole.homelab.cs-ol.de
+            version: 6
+            key: '{{HOMEPAGE_VAR_PIHOLE_KEY}}'
+
+- Monitoring:
+    - Grafana:
+        href: https://grafana.homelab.cs-ol.de
+        description: Grafana
+        icon: grafana.png
+        widget:
+            type: grafana
+            url: https://grafana.homelab.cs-ol.de
+            version: 2
+            alerts: alertmanager
+            username: admin
+            password: '{{HOMEPAGE_VAR_GRAFANA_PASSWORD}}'
+    - NTFY:
+        href: https://ntfy.meatweb2.duckdns.org/
+        siteMonitor: https://ntfy.meatweb2.duckdns.org/
+        icon: ntfy.png
+        server: docker-ionosxs
+        container: ntfy
+
+- Devices:
+    - Stromzähler:
+        href: http://192.168.1.74
+    - Gaszähler:
+        href: http://192.168.1.75
+    - Wasserzähler:
+        href: http://192.168.1.73
+    - Gartenwasser P47:
+        href: http://192.168.1.76
+    - Gartenwasser P47A:
+        href: http://192.168.1.77
+    - Drucker Brother MFC-L2960DW:
+        href: http://192.168.0.220
+        description: printer Web Admin
+        icon: printer.png
+        siteMonitor: http://192.168.0.220
+
+    - Drucker Kyocera:
+        href: http://192.168.1.107
+        description: printer Web Admin
+        icon: printer.png
+        siteMonitor: http://192.168.1.117

@@ -1,0 +1,23 @@
+docker-lab1:
+  host: 192.168.1.64
+  port: 2375
+
+docker-raspi1:
+  host: 192.168.0.50
+  port: 2375
+
+docker-raspi2:
+  host: 192.168.0.54
+  port: 2375
+
+docker-mamapi:
+  host: 192.168.100.98
+  port: 2375
+
+docker-ionos:
+  host: 10.7.0.1
+  port: 2375
+
+docker-ionosxs:
+  host: 10.7.0.9
+  port: 2375

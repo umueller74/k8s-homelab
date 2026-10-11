@@ -5,8 +5,25 @@ resources:
   - namespace.yaml
   - serviceaccount.yaml
   - secret.yaml
-  - configmap.yaml
   - clusterrole.yaml
   - service.yaml
   - deployment.yaml
   - ingressroute.yaml
+# Hash-suffixed name: editing a config file changes the name and rolls the pod.
+# The Deployment mounts files via subPath, which never refreshes in place.
+configMapGenerator:
+  - name: homepage
+    namespace: homepage
+    options:
+      labels:
+        app.kubernetes.io/name: homepage
+    files:
+      - config/bookmarks.yaml
+      - config/custom.css
+      - config/custom.js
+      - config/docker.yaml
+      - config/kubernetes.yaml
+      - config/proxmox.yaml
+      - config/services.yaml
+      - config/settings.yaml
+      - config/widgets.yaml

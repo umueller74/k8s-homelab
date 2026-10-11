@@ -1,0 +1,4 @@
+pve:
+  url: https://192.168.1.27:8006
+  token: root@pam!homepage
+  secret: '{{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}'
