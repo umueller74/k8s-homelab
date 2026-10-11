@@ -1,0 +1,13 @@
+# longhorn-retain: an accidental Kustomization delete must not take the data with it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: portfolio
+  namespace: portfolio
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 1Gi

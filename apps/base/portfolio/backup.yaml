@@ -1,0 +1,145 @@
+# Pins the NAS host key so the backup cannot be silently redirected to another
+# host. Public key material, safe to commit. Same key as the influxdb backup.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portfolio-backup-known-hosts
+  namespace: portfolio
+data:
+  known_hosts: |
+    192.168.1.240 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDEgmfWaeLMCD53RLIVoaszI1ujimBf0eAko7mQ5QN1PItNmdg8BNdWaPeUwKerz/whUpFtpfvv8BUOB/e4VIDU/mJvci32i5+2rHj/IMeV23201m3XIqHgxJkfQ1zO182caHQa0d9bf9WUXUzSfjGXEZiGNrkG6S4DyzmixQaROtnuP3rdhxO0fq7lS7y/zWSU1m4PfSrsQyJ60kJ1Tx+6QwBVBv2XOhweqzAqKPcRvwE8z69NzMJw+9kAJMVQ7nX1i5eHVtd1VnUWL/QUQ8kRcxQCPlciVL4GFuEVYOLlBVlJVwWwBf2LQ5hbsWyouvsvbjunmhK0UmR7xcfyq5J
+---
+# Nightly copy of the SQLite file to the NAS over scp.
+#
+# The init container fetches a consistent copy (VACUUM INTO) through the app's
+# bearer-protected /api/backup, so no volume access is needed and the job can
+# run on any node; the main container packs and ships it.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: portfolio-backup
+  namespace: portfolio
+spec:
+  schedule: '50 3 * * *'
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+
+          initContainers:
+            - name: dump
+              image: curlimages/curl:8.11.1
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  curl -fsS -H "Authorization: Bearer ${INGEST_TOKEN}" \
+                    http://portfolio.portfolio.svc.cluster.local:8000/api/backup -o /backup/portfolio.db
+              env:
+                - name: INGEST_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: portfolio-secrets
+                      key: ingest-token
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+
+          containers:
+            - name: ship
+              image: alpine:3.22
+
+              env:
+                - name: APP
+                  value: portfolio
+                - name: KEEP
+                  value: '14'
+                - name: NAS_HOST
+                  value: '192.168.1.240'
+                - name: NAS_PATH
+                  value: /share/MD0_DATA/Backup/portfolio
+                - name: NAS_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: portfolio-backup-nas
+                      key: username
+                # sshpass -e reads the password from SSHPASS, keeping it out of
+                # the command line and therefore out of the process list.
+                - name: SSHPASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: portfolio-backup-nas
+                      key: password
+
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  apk add --no-cache openssh-client sshpass tar >/dev/null
+
+                  STAMP=$(date -u +%Y-%m-%d_%H%MZ)
+                  OUT="/tmp/${APP}-${STAMP}.tar.gz"
+                  tar -C /backup -czf "$OUT" .
+
+                  SIZE=$(wc -c < "$OUT")
+                  [ "$SIZE" -gt 1000 ] || { echo "FATAL: archive implausibly small ($SIZE bytes)" >&2; exit 1; }
+
+                  # The NAS runs OpenSSH 7.6: -O forces the legacy scp protocol,
+                  # and ssh-rsa is the only host key type it offers.
+                  SSH_OPTS="-o UserKnownHostsFile=/etc/nas/known_hosts -o StrictHostKeyChecking=yes -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa"
+                  sshpass -e ssh $SSH_OPTS "${NAS_USER}@${NAS_HOST}" "mkdir -p '${NAS_PATH}'"
+                  sshpass -e scp -O $SSH_OPTS "$OUT" "${NAS_USER}@${NAS_HOST}:${NAS_PATH}/"
+
+                  # Keep the newest $KEEP archives of this app.
+                  sshpass -e ssh $SSH_OPTS "${NAS_USER}@${NAS_HOST}" \
+                    "cd '${NAS_PATH}' && ls -1t ${APP}-*.tar.gz | sed -n '$((KEEP + 1)),\$p' | while read -r f; do rm -f \"\$f\"; done"
+
+                  echo "Backed up $(basename "$OUT") ($SIZE bytes) to ${NAS_HOST}:${NAS_PATH}"
+
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+
+              securityContext:
+                allowPrivilegeEscalation: false
+
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                  readOnly: true
+                - name: known-hosts
+                  mountPath: /etc/nas
+                  readOnly: true
+
+          volumes:
+            - name: backup
+              emptyDir: {}
+            - name: known-hosts
+              configMap:
+                name: portfolio-backup-known-hosts
