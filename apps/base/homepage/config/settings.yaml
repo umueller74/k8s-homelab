@@ -1,0 +1,11 @@
+title: Muellernetz.de Homepage
+startUrl: http://homepage.homelab.cs-ol.de
+theme: dark
+
+useEqualHeights: true
+showStats: true
+providers:
+  longhorn:
+    url: https://longhorn.homelab.cs-ol.de/
+
+maxGroupColumns: 3
