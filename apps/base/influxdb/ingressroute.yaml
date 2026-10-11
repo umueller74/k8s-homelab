@@ -7,7 +7,7 @@ metadata:
     gethomepage.dev/href: 'https://influxdb.homelab.cs-ol.de'
     gethomepage.dev/enabled: 'true'
     gethomepage.dev/description: Home Assistant history
-    gethomepage.dev/group: Prometheus Stack
+    gethomepage.dev/group: Monitoring
     gethomepage.dev/icon: influxdb.png
     gethomepage.dev/app: influxdb
     gethomepage.dev/name: InfluxDB 2
