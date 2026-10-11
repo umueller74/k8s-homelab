@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-health
+  namespace: cluster-health
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-health-token
+  namespace: cluster-health
+  annotations:
+    kubernetes.io/service-account.name: cluster-health
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-health-read
+rules:
+  - apiGroups: ["kustomize.toolkit.fluxcd.io", "helm.toolkit.fluxcd.io", "source.toolkit.fluxcd.io"]
+    resources: ["*"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "events", "persistentvolumeclaims", "namespaces"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list"]
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates"]
+    verbs: ["get", "list"]
+  - apiGroups: ["longhorn.io"]
+    resources: ["volumes"]
+    verbs: ["get", "list"]
+  - nonResourceURLs: ["/version", "/readyz"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-health-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-health-read
+subjects:
+  - kind: ServiceAccount
+    name: cluster-health
+    namespace: cluster-health
