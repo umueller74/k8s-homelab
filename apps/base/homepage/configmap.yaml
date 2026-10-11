@@ -106,16 +106,6 @@ data:
             icon: proxmox.png
 
     - Code:
-        - NGINX Proxy Manager - EXTERN:
-            href: http://10.7.0.9:8081/
-            icon: nginx-proxy-manager.png
-            server: docker-ionosxs
-            container: nginx-app-1
-            widget:
-                type: npm
-                url: http://10.7.0.9:8081
-                username: info@cs-ol.de
-                password: '{{HOMEPAGE_VAR_NPM_EXTERN_PASSWORD}}'
         - QNAP:
             href: http://192.168.1.240/
             siteMonitor: http://192.168.1.240/
