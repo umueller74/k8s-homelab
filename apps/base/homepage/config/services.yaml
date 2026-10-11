@@ -75,12 +75,6 @@
             alerts: alertmanager
             username: admin
             password: '{{HOMEPAGE_VAR_GRAFANA_PASSWORD}}'
-    - NTFY:
-        href: https://ntfy.meatweb2.duckdns.org/
-        siteMonitor: https://ntfy.meatweb2.duckdns.org/
-        icon: ntfy.png
-        server: docker-ionosxs
-        container: ntfy
 
 - Devices:
     - Stromzähler:
