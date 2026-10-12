@@ -21,6 +21,17 @@ spec:
       disabled:
         etcdHighFsyncDurations: true
 
+    # The chart's kube-etcd Service selects pods labelled component=etcd; Talos runs
+    # etcd as a system service, so it never had endpoints. etcd is scraped by the
+    # talos-etcd job below instead (#223). Only the Service and ServiceMonitor go:
+    # kubeEtcd.enabled also gates the etcd alert rules and Grafana dashboard, which
+    # select job=~".*etcd.*" and therefore work with talos-etcd.
+    kubeEtcd:
+      service:
+        enabled: false
+      serviceMonitor:
+        enabled: false
+
     prometheus:
       prometheusSpec:
         # Used for the "Source" links in alerts; defaults to the in-cluster URL.
