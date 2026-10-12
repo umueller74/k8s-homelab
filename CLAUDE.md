@@ -42,7 +42,7 @@ Applications follow a three-layer pattern:
 
 - **Traefik**: Ingress controller with LoadBalancer service (MetalLB), automatic Let's Encrypt via ACME
 - **cert-manager**: TLS certificate management with DNS-01 solver (cPanel webhook for wildcard certs)
-- **Longhorn**: Distributed block storage (default StorageClass, 3 replicas)
+- **Longhorn**: Distributed block storage (default StorageClass, 2 replicas)
 - **MetalLB**: Bare-metal load balancer providing external IPs
 - **Prometheus stack**: Monitoring (kube-prometheus-stack via Helm)
 - **Homepage**: Dashboard aggregating services with Kubernetes/Docker/Proxmox integrations
@@ -181,7 +181,7 @@ The `main` branch is the source of truth for Flux CD. All changes must go throug
 ### Storage
 
 - **Longhorn** is the default StorageClass
-- Configured for 3 replicas per volume
+- 2 replicas per volume (`defaultReplicaCount` in `clusters/production/storage/longhorn/helmrelease.yaml`, `numberOfReplicas` in the `longhorn-retain` StorageClass) — three nodes, but all share one NVMe on pve2, so a third replica only adds write load on a disk that already starves etcd (#92)
 - PVCs automatically provisioned from Longhorn
 - Each pod requiring persistent storage needs its own PVC (Pi-hole uses one PVC per replica)
 
