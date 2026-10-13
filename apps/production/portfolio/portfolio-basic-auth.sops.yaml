@@ -4,7 +4,7 @@ metadata:
     name: portfolio-basic-auth
     namespace: portfolio
 stringData:
-    users: ENC[AES256_GCM,data:J9q9i8xJPm26d88CNlxFw/lwwxAqG/6PXOms36jvcds2TOQK3gHeFmI=,iv:KAMEcuJEZCb3waU7VO9FftcKgu9VUU0vC+i4+Co5S+w=,tag:hGznV9pKCKH5eiia7EZE9Q==,type:str]
+    users: ENC[AES256_GCM,data:muTDe8UrQBV6+85SpIzUrrQdGjhGhQ+5cWi33d6iIngjwHO0livAUwyRFZBT,iv:i3OB7Gct7bW0nXN/rYbE8wQ3EmvEIABomxCwExecI+Q=,tag:PYgHgvKE0O758g6+JU3FUg==,type:str]
 sops:
     age:
         - enc: |
@@ -17,6 +17,6 @@ sops:
             -----END AGE ENCRYPTED FILE-----
           recipient: age1zq7k2f07ardejddg6fkxgh8mayu740ytu7hlw36hcr46gdtequ8q4slk2z
     encrypted_regex: ^(data|stringData)$
-    lastmodified: "2026-10-11T17:08:18Z"
-    mac: ENC[AES256_GCM,data:zOS78W9b7KZNZJ+3e0w01YaFAk5pUPk8hGCQYEYsjy/Bag6BMCxV3xdL/IQf4l7vLQGcpWce73ki+d6vM5GrdNpM9NTBHaF855wSadU62/GY1xsUO0bMt6a4Wz9AA/3XeSVZMIoBCwa3ADeSyyJwziWyhSjbWeDwDZ3zl6Li/uU=,iv:gcNaK6dwpNuEwt0QOeHKNUu/DoWrq4VuRWp9yaHx1M0=,tag:MAf7kA+vEecik/cKCicOrQ==,type:str]
+    lastmodified: "2026-10-13T15:23:48Z"
+    mac: ENC[AES256_GCM,data:awZgt4/HPnxsUN32sUZAljmaCk8W1Yy4nrwa9xGP8QU/e7XxkiDOngCdWt8cqY2ii6Np47GgmNcxZvBKYjW9UePT6GeDouLVFhy+9yDERehyAEDSjbvoGfdk/yUFoPaiiWaegIZUyKw9kIYflOu9NL5EdDFCZLrKLPl4BR3Mkhs=,iv:Y3f1jCFYAuI3yTwVotcWhHAVoTgjTKIcf+ruhkp+4fY=,tag:ft7AAdjlRmEoKD2qhACnyQ==,type:str]
     version: 3.13.3
