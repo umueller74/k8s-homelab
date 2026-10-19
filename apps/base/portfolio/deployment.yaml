@@ -29,7 +29,7 @@ spec:
 
       containers:
         - name: portfolio
-          image: ghcr.io/umueller74/portfolio-dashboard:0.14.2
+          image: ghcr.io/umueller74/portfolio-dashboard:0.14.3
 
           ports:
             - name: http
