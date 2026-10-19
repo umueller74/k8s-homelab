@@ -29,7 +29,7 @@ spec:
 
       containers:
         - name: portfolio
-          image: ghcr.io/umueller74/portfolio-dashboard:0.15.0
+          image: ghcr.io/umueller74/portfolio-dashboard:0.16.0
 
           ports:
             - name: http
@@ -43,6 +43,9 @@ spec:
                 secretKeyRef:
                   name: portfolio-secrets
                   key: ingest-token
+            # "Fetch now" button: the fetcher's listener on raspi2 (homelab role portfolio-fetcher)
+            - name: FETCH_TRIGGER_URL
+              value: http://192.168.0.54:8770/fetch
             # MA 20d/50d crossover alerts via Hermes' Telegram bot; optional, no alerts while unset
             - name: TELEGRAM_BOT_TOKEN
               valueFrom:
