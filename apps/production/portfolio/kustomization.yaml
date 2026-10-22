@@ -4,5 +4,4 @@ kind: Kustomization
 resources:
   - ../../base/portfolio
   - portfolio-secrets.sops.yaml
-  - portfolio-basic-auth.sops.yaml
   - portfolio-backup-nas.sops.yaml

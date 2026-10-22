@@ -15,19 +15,9 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # Bearer-token API (ingest, backup): no basicAuth, the app checks the token itself.
+    # LAN-only host, no basicAuth; /api (ingest, backup) checks its bearer token in the app.
     - kind: Rule
-      priority: 20
-      match: Host(`portfolio.homelab.cs-ol.de`) && PathPrefix(`/api`)
-      services:
-        - kind: Service
-          name: portfolio
-          port: 8000
-    - kind: Rule
-      priority: 10
       match: Host(`portfolio.homelab.cs-ol.de`)
-      middlewares:
-        - name: basic-auth
       services:
         - kind: Service
           name: portfolio
