@@ -63,6 +63,20 @@ spec:
             cpu: 2
             memory: 4Gi
 
+        # Prefer the node with the most free memory; talos-9rs-4ei also carries
+        # Paperless and fired NodeMemoryEarlyWarning with Prometheus on it (#257).
+        # Soft, so Prometheus still schedules elsewhere if that node is down.
+        affinity:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                preference:
+                  matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: In
+                      values:
+                        - talos-isv-pq4
+
         # Global scrape/evaluation interval
         scrapeInterval: 15s
         evaluationInterval: 15s
