@@ -1,0 +1,12 @@
+# Pin the address: Tasmota devices fetch OTA firmware from 10.98.0.200 directly
+# (see apps/base/tasmoadmin/ingressroute.yaml).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: flux-system
+spec:
+  values:
+    service:
+      annotations:
+        metallb.io/loadBalancerIPs: 10.98.0.200
