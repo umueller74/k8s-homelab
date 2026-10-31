@@ -1,0 +1,88 @@
+# Discord bot that warns @everyone before in-game midnight on ARK Scorched Earth.
+# Outbound only (Discord gateway), so no Service or ingress.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fear-ascended-bot
+  namespace: fear-ascended-bot
+spec:
+  # One gateway session per token, and a ReadWriteOnce volume: never run two pods at once.
+  replicas: 1
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: fear-ascended-bot
+
+  template:
+    metadata:
+      labels:
+        app: fear-ascended-bot
+
+    spec:
+      enableServiceLinks: false
+
+      securityContext:
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: bot
+          image: ghcr.io/umueller74/fear-ascended-bot:sha-69eea51
+
+          env:
+            - name: DB_PATH
+              value: /data/bot.sqlite3
+            - name: GUILD_ID
+              value: '1464651585060606042'
+            - name: CHANNEL_ID
+              value: '1566083981970243604'
+            - name: DAY_START
+              value: '05:15'
+            - name: NIGHT_START
+              value: '20:25'
+            - name: WARN_AT
+              value: '23:00'
+            - name: ARKSTATUS_MODE
+              value: 'off'
+            - name: ARKSTATUS_SERVER_ID
+              value: '4310573291'
+            - name: ARKSTATUS_POLL_SECONDS
+              value: '60'
+            - name: DISCORD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: fear-ascended-bot-secrets
+                  key: discord-token
+            - name: ARKSTATUS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fear-ascended-bot-secrets
+                  key: arkstatus-api-key
+                  optional: true
+
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 192Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities:
+              drop: [ALL]
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: fear-ascended-bot

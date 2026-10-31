@@ -1,0 +1,13 @@
+# longhorn-retain: an accidental Kustomization delete must not take the syncs with it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fear-ascended-bot
+  namespace: fear-ascended-bot
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-retain
+  resources:
+    requests:
+      storage: 1Gi
