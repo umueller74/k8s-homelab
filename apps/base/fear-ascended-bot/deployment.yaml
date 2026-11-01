@@ -30,7 +30,7 @@ spec:
 
       containers:
         - name: bot
-          image: ghcr.io/umueller74/fear-ascended-bot:sha-42a0be6
+          image: ghcr.io/umueller74/fear-ascended-bot:sha-899672b
 
           env:
             - name: DB_PATH
